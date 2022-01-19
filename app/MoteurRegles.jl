@@ -6,7 +6,7 @@ struct TerminalTexte
 end 
 
 struct TerminalEntier 
-  valeur::Int 
+  valeur::String 
 end 
 
 struct TerminalDate 
@@ -29,8 +29,6 @@ end
 # RetourTerminal = Union{ Nothing, Jeton } 
 
 mutable struct MotVariable 
-  __debut__::Int
-  __taille__::Int 
   cle::TerminalVariable 
   valeur::Union{ TerminalVariable, TerminalTexte } 
 end 
@@ -38,8 +36,8 @@ struct MotClause
   valeur::String
 end 
 struct MotCondition 
-  nom::String 
-  poids::Int32 
+  nom::TerminalTexte 
+  poids::TerminalEntier
   clauses::Vector{MotClause}
 end 
 struct MotRègle 
@@ -68,11 +66,16 @@ end
 
 mutable struct Source 
   texte::String  
+  calculer::Function 
   obtenir::Function 
+  obtenir_suite::Function
   obtenir_character::Function
   function Source( texte::String ) 
     objet = new() 
     objet.texte = texte 
+    objet.calculer = function ( position::Int )
+      return nextind( objet.texte, position ) 
+    end 
     objet.obtenir = function ( position::Int, taille::Int )
       return SubString( 
         objet.texte, 
@@ -80,13 +83,8 @@ mutable struct Source
         nextind( objet.texte, position+taille ) 
       )  
     end 
-    objet.obtenir_character = function ( position::Int ) 
-      return only( 
-        SubString( 
-          objet.texte, 
-          nextind( objet.texte, position )  
-        ) 
-      ) 
+    objet.obtenir_suite = function ( position::Int ) 
+      return objet.texte[nextind( objet.texte, position ):end] 
     end 
     return objet 
   end 
@@ -177,31 +175,45 @@ function terminal_variable( position_relative::Int, parseur::Parseur )
   end 
 end 
 
-function terminal_texte( position_relative::Int, parseur::Parseur ) 
+function terminal_entier( position_relative::Int, parseur::Parseur ) 
   p = 0
+  while only( parseur.source.obtenir( position_relative+p, 0 ) ) in Num 
+    p += 1 
+  end 
+  if p == 0 
+    return false 
+  else 
+    return TerminalEntier( 
+      parseur.source.obtenir( 
+        position_relative, 
+        p-1 
+      ) 
+    ) 
+  end 
+end 
+
+function terminal_texte( position_relative::Int, parseur::Parseur ) 
   if ! parseur.comparer( "\"", false ) 
     return false 
   end 
   echappement = false 
-  while true 
-    p += 1
-    c = only( parseur.source.obtenir( position_relative+p, 0 ) ) 
+  for (i, caractere) in enumerate( parseur.source.obtenir_suite( position_relative+2 ) ) 
+    c = only( caractere )
     if c == '\\' 
       echappement = true 
     elseif c =='"'
       if echappement == false 
-        break
+        return TerminalTexte( 
+          parseur.source.obtenir( 
+            position_relative+1, 
+            nextind( parseur.source.texte, i ) 
+          ) 
+        ) 
       else 
         echappement = false 
       end 
     end 
   end 
-  return TerminalTexte( 
-    parseur.source.obtenir( 
-      position_relative+1, 
-      p-2 
-    ) 
-  ) 
 end 
 
 function expression_variable( parseur::Parseur )
@@ -230,8 +242,6 @@ function expression_variable( parseur::Parseur )
   end 
   parseur.position += length( valeur.valeur ) 
   variable = MotVariable( 
-    position_depart, 
-    ( parseur.position - position_depart ), 
     cle, 
     valeur 
   ) 
@@ -242,9 +252,8 @@ end
 
 
 function expression_condition( parseur::Parseur )
-  parseur.espaces() 
   position_depart = parseur.position 
-  print( parseur.source.obtenir( position_depart, 9 ) ) 
+  parseur.espaces() 
   if ! parseur.comparer( "Condition", false ) 
     return false 
   end 
@@ -254,15 +263,41 @@ function expression_condition( parseur::Parseur )
   if nom == false 
     error( "Une condition a été commencée sans partie 'nom' valide" ) 
   end 
-  parseur.position += length( nom.valeur ) 
+  parseur.position = nextind( 
+    parseur.source.texte, 
+    parseur.position+sizeof( nom.valeur )+2 # guillemets x2 
+  ) 
   parseur.espaces() 
-  # if parseur.comparer( "(", true ) 
+  if parseur.comparer( "(", true ) 
+    poids = terminal_entier( parseur.position, parseur ) 
+    if poids == false 
+      error( "Une condition a un poids qui n'est pas un entier" ) 
+    end
+    parseur.position += length( poids.valeur ) 
+    if ! parseur.comparer( ")", true ) 
+      error( "Une condition a un poids non terminé" ) 
+    end 
+  end 
+  parseur.espaces() 
+  if ! parseur.comparer( ":", true ) 
+    error( "Une condition n'a pas de séparateur de corps" ) 
+  end 
+  parseur.espaces() 
 
 
-  #   error( "Une variable a été commencée sans séparateur valide" ) 
-  # end 
-  parseur.espaces() 
-  return nom 
+
+  println(
+    parseur.source.obtenir_suite( 
+      parseur.position
+    )
+  ) 
+  condition = MotCondition( 
+    nom, 
+    poids, 
+    [] 
+  ) 
+  parseur.ajouter_jetons( condition ) 
+  return condition 
 end 
 
 
@@ -270,8 +305,8 @@ end
 
 
 function avancer( parseur::Parseur ) 
-  # parseur.espaces() 
-  # println( expression_variable( parseur ) ) 
+  parseur.espaces() 
+  println( expression_variable( parseur ) ) 
   parseur.espaces() 
   println( expression_condition( parseur ) ) 
   parseur.espaces() 
@@ -281,10 +316,10 @@ end
 ################# Fin du module 
 # end
 
-  # Variable message : "bonjour"
 source = Source( """
+  Variable message : "bonjour"
 
-  Condition "offre spéciale" (10) : 
+  Condition "offre spééciale" (10) : 
     date.aujourdhui < "2022-02-16" 
     & client.est_membre() 
 
