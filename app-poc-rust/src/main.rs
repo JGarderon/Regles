@@ -2,20 +2,25 @@
 use std::collections::HashMap; 
 
 // #[derive(Debug)]
-struct Contexte<'t_cd,'t_cl> { 
+struct Contexte<'t_rg, 't_cd,'t_cl> { 
     regles: HashMap<String, Regle>, 
     conditions: HashMap<String, Condition>, 
     clauses: HashMap<String, Clause>, 
-    tours: Vec<(usize, Vec<Regle>)>, // vecteur groupé (poids du groupe + vecteur trié des règles) 
+    tours: Vec<(usize, Vec<&'t_rg Regle>)>, // vecteur groupé (poids du groupe + vecteur trié des règles) 
     tour_conditions: HashMap<&'t_cd str, &'t_cd Condition>, 
     tour_clauses: HashMap<&'t_cl str, &'t_cl Clause>, 
 } 
 
-impl Contexte { 
-    fn deduire( self ) {
-        
-    }
-}
+impl Contexte<'_, '_,'_> { 
+    fn deduire( self ) { 
+        let mut groupes = self.regles.iter().map( 
+            |(_c,v)| v.poids.1 
+        ).collect::<Vec<usize>>(); 
+        groupes.sort();
+        groupes.dedup(); 
+        // récupérer ici les règles qui font partie du groupe... 
+    } 
+} 
 
 // #[derive(Debug)]
 struct Condition { 
