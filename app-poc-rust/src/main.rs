@@ -1,78 +1,131 @@
+#![allow(warnings, unused)] 
 
-use std::collections::HashMap; 
+use std::iter::Enumerate; 
+// use std::collections::HashMap; 
+
+type IdRegle = usize;
+type IdCondition = usize;
+type IdClause = usize;
+type IdPoids = usize;
+
+type AppelableSimple = fn( contexte: &mut Contexte ) -> bool; 
+type AppelableComplexe = fn( contexte: &mut Contexte, declenchable: bool ) -> bool; 
+
+trait ArbreResolvable<T> {
+  fn resoudre( self, contexte: &mut Contexte, appelables: &T ) -> bool {
+    objet.
+  }
+}
 
 // #[derive(Debug)]
-struct Contexte<'t_rg, 't_cd,'t_cl> { 
-    regles: HashMap<String, Regle>, 
-    conditions: HashMap<String, Condition>, 
-    clauses: HashMap<String, Clause>, 
-    tours: Vec<(usize, Vec<&'t_rg Regle>)>, // vecteur groupé (poids du groupe + vecteur trié des règles) 
-    tour_conditions: HashMap<&'t_cd str, &'t_cd Condition>, 
-    tour_clauses: HashMap<&'t_cl str, &'t_cl Clause>, 
+enum ArbreClauses {
+  Ou( Box<ArbreClauses>, Box<ArbreClauses> ),
+  Et( Box<ArbreClauses>, Box<ArbreClauses> ),
+  Seul( IdClause ) 
 } 
 
-impl Contexte<'_, '_,'_> { 
-    fn deduire( self ) { 
-        let mut groupes = self.regles.iter().map( 
-            |(_c,v)| v.poids.1 
-        ).collect::<Vec<usize>>(); 
-        groupes.sort();
-        groupes.dedup(); 
-        // récupérer ici les règles qui font partie du groupe... 
+// #[derive(Debug)]
+struct Contexte { 
+  regles: Vec<Regle>, 
+  conditions: Vec<Condition>, 
+  clauses: Vec<Clause>, 
+  tours: Vec<Vec<IdRegle>>, // vecteur groupé de vecteurs triés de règles 
+  tour_conditions: Vec<IdCondition>, 
+  tour_clauses: Vec<IdClause> 
+} 
+
+impl Contexte { 
+  fn creer( regles: Vec<Regle>, conditions: Vec<Condition>, clauses: Vec<Clause> ) -> Self {
+    Contexte { 
+      regles: regles, 
+      conditions: conditions, 
+      clauses: clauses, 
+      tours: vec!(), 
+      tour_conditions: vec!(), 
+      tour_clauses: vec!() 
     } 
+  }
+  fn compiler( mut self ) { 
+    let mut regroupement = self.regles.iter().map( 
+        |r| r.groupe 
+    ).collect::<Vec<usize>>(); 
+    regroupement.sort();
+    regroupement.dedup(); 
+    self.tours = regroupement.iter().fold( 
+      vec!(), 
+      |mut v_n1, valeur_regroupement| {
+        let groupe = self.regles.iter().enumerate().fold( 
+          vec!(),  
+          |mut v_n2, (i, r)| {
+            if r.groupe == *valeur_regroupement { 
+              v_n2.push( i ) 
+            } 
+            v_n2 
+          }
+        ); 
+        v_n1.push( groupe ); 
+        v_n1 
+      }
+    ); 
+  } 
+  fn jouer( mut self ) -> bool { 
+    if let Some( tour ) = self.tours.pop() { 
+
+      true 
+    } else {
+      false 
+    }
+  }
 } 
 
 // #[derive(Debug)]
 struct Condition { 
-    etat: bool 
+  etat: bool, 
+  arbre: ArbreClauses  
 }
 
 // #[derive(Debug)]
 struct Clause { 
-    etat: bool 
+  etat: bool, 
+  fct: AppelableSimple 
 }
 
 // #[derive(Debug)]
 struct Regle { 
-    nom: String, 
-    poids: (usize,usize), // groupe, trie 
-    conditions: Vec<String>, 
-    si: Option<fn( contexte: &mut Contexte ) -> bool>, 
-    sinon: Option<fn( contexte: &mut Contexte ) -> bool>, 
-    finalement: Option<fn( contexte: &mut Contexte, declenchable: bool ) -> bool> 
+  nom: String, 
+  groupe: usize, 
+  conditions: Vec<IdCondition>, 
+  si: Vec<AppelableSimple>, 
+  sinon: Vec<AppelableSimple>, 
+  finalement: Vec<AppelableComplexe> 
 } 
 
 impl Regle {
-    fn declencher( self, contexte: &mut Contexte ) -> bool {
-        let declenchable: bool = self.conditions.iter().fold(
-            true,  
-            |acc, c_nom| acc && contexte.tour_conditions.get( &c_nom[..] ).unwrap().etat 
-        ); 
-        let fin = if declenchable { 
-            if let Some( f ) = self.si {
-                f( contexte ); 
-                true
-            } else {
-                false 
-            }
-        } else {
-            if let Some( f ) = self.sinon {
-                f( contexte ); 
-                true 
-            } else { 
-                false
-            } 
-        }; 
-        if fin {
-            if let Some( f ) = self.finalement {
-                f( contexte, declenchable ); 
-            } 
-        } 
-        fin 
-    }
+  fn declencher( self, contexte: &mut Contexte ) -> bool { 
+    let declenchable: bool = self.conditions.iter().fold(
+      true,  
+      |acc, id_condition| { 
+        let id_condition_regle = contexte.tour_conditions[*id_condition]; 
+        acc && contexte.conditions[id_condition_regle].etat 
+      } 
+    ); 
+    if declenchable { 
+      self.si.iter().for_each( 
+          |fct| fct( contexte ) 
+      ); 
+    } else { 
+      self.sinon.iter().for_each( 
+          |fct| fct( contexte ) 
+      ); 
+    }; 
+    self.finalement.iter().for_each( 
+      |fct| fct( contexte, declenchable ) 
+    ); 
+    declenchable 
+  } 
 }
 
 
 fn main() {
-    println!("Hello, world!");
+  println!("Hello, world!");
 }
