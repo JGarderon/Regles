@@ -9,6 +9,8 @@ def envoyer_etat( m ):
         flush=True 
     ) 
 
+envoyer_etat( "OP-PRET" ) 
+
 envoyer_etat( "OP-DEBUT" ) 
 
 for line in fileinput.input(): # encoding="utf-8" 

@@ -18,12 +18,19 @@ enum Canal {
     Message(String) 
 }
 
+#[derive(Debug)]
+enum EtatFinFil {
+    Correct, 
+    Incorrect, 
+    LancementImpossible 
+}
+
 fn main() {
 
     let (emeteur_parent, recepteur_enfant) = channel::<Canal>(); 
     // let (emeteur_enfant, recepteur_parent) = channel::<Canal>(); 
 
-    let fil_parent_reception = thread::spawn( move || {
+    let fil_parent = thread::spawn( move || {
         let entree_generale = io::stdin(); 
         let mut buffer = String::new();
         loop { 
@@ -35,7 +42,7 @@ fn main() {
                         Canal::Message( buffer.to_string() )
                     ).unwrap(); 
                 } 
-                Err( erreur ) => panic!("[RUST] fil_parent_reception en erreur : {:?}", erreur) 
+                Err( erreur ) => panic!("[RUST] fil_parent en erreur : {:?}", erreur) 
             } 
             buffer.clear(); 
         } 
@@ -45,17 +52,26 @@ fn main() {
         ).unwrap(); 
     } ); 
 
-    let mut child = Command::new("python3")
-        .arg( "./support.py" ) 
-        .stdin(Stdio::piped()) 
-        .stdout(Stdio::piped()) 
-        .stderr(Stdio::piped()) 
-        .spawn()
-        .unwrap();
-    let mut enfant_stdin = child.stdin.take().expect("Failed to open stdin");
-    let mut enfant_err = BufReader::new(child.stderr.take().unwrap()).lines();
-
     let fil_enfant = thread::spawn( move || { 
+
+        let mut child = Command::new("python3")
+            .arg( "./support.py" ) 
+            .stdin(Stdio::piped()) 
+            .stdout(Stdio::piped()) 
+            .stderr(Stdio::piped()) 
+            .spawn()
+            .unwrap();
+        let mut enfant_stdin = child.stdin.take().expect("Failed to open stdin");
+        let mut enfant_err = BufReader::new(child.stderr.take().unwrap()).lines();
+
+        match enfant_err.next() { 
+            Some( Ok( m ) ) => match &m[..] { 
+                "OP-PRET" => println!("ok : {:?}", m), 
+                _ => return EtatFinFil::Incorrect 
+            } 
+            _ => return EtatFinFil::LancementImpossible 
+        }
+
         let mut recepteur_enfant_iterable = recepteur_enfant.iter().peekable(); 
         loop { 
             match recepteur_enfant_iterable.peek() { 
@@ -107,12 +123,17 @@ fn main() {
                 None => break 
             } 
         } 
+
+        let status = child.wait().unwrap();
+        println!("[RUST] {}", status);
+        EtatFinFil::Correct
     } ); 
 
-    fil_parent_reception.join().unwrap(); 
-    fil_enfant.join().unwrap(); 
+    fil_parent.join().unwrap(); 
+    println!( 
+        "[RUST] Retour du fil enfant : {:?}", 
+        fil_enfant.join().unwrap() 
+    ); 
 
-    let status = child.wait().unwrap();
-    println!("[RUST] {}", status);
 } 
 
