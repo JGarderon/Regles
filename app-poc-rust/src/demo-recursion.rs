@@ -1,6 +1,14 @@
+#![allow(warnings, unused)] 
 
-#[derive(Debug)] 
+
+#[derive(Clone,Debug)] 
+struct Clause {
+	etat: Option<bool> 
+} 
+
+#[derive(Clone,Debug)] 
 enum Jeton { 
+	Clause(Clause), 
 	Etat(bool), 
 	LiaisonOu, 
 	LiaisonEt,
@@ -8,15 +16,58 @@ enum Jeton {
 	GroupeFermant 
 } 
 
+#[derive(Debug)] 
+struct Condition { 
+	etat: Option<bool>, 
+	clauses: Vec<Jeton> 
+} 
+
+impl Condition { 
+	fn creer( clauses: Vec<Jeton> ) -> Self { 
+		Condition { 
+			etat: None,  
+			clauses: clauses 
+		} 
+	} 
+	// fn preparer( &mut self ) -> Vec<String> { 
+
+	// } 
+	fn resoudre( &mut self ) { 
+		let mut condition = vec!( Feuille::creer() ); 
+		for element in &self.clauses { 
+			match element {
+				Jeton::Clause( c ) => {
+					&condition[..].last_mut().unwrap().pile.push( c.etat.unwrap() ); 
+				}
+				Jeton::Etat( e ) => { 
+					&condition[..].last_mut().unwrap().pile.push( *e ); 
+				},
+				Jeton::LiaisonOu | Jeton::LiaisonEt => { 
+					&condition[..].last_mut().unwrap().action.push( element.clone() ); 
+				}, 
+				Jeton::GroupeOuvrant => {
+					condition.push( Feuille::creer() ); 
+				}, 
+				Jeton::GroupeFermant => { 
+					let e = condition.pop().unwrap().resoudre(); 
+					&condition[..].last_mut().unwrap().pile.push( e ); 
+				} 
+			} 
+		} 
+		let feuille = condition.pop().unwrap(); 
+		self.etat = Some( feuille.resoudre() ); 
+	}
+}
+
 #[derive(Debug)]
-struct Contexte {
+struct Feuille {
 	pile: Vec<bool>, 
 	action: Vec<Jeton> 
 } 
 
-impl Contexte {
+impl Feuille {
 	fn creer() -> Self {
-		Contexte { 
+		Feuille { 
 			pile: vec!(), 
 			action: vec!() 
 		} 
@@ -60,32 +111,12 @@ fn main() {
 		Jeton::Etat(true) 
 	); 
 
-	let mut contextes = vec!( Contexte::creer() ); 
-
-	for element in liste { 
-		match element {
-			Jeton::Etat( e ) => { 
-				&contextes[..].last_mut().unwrap().pile.push( e ); 
-			},
-			Jeton::LiaisonOu | Jeton::LiaisonEt => { 
-				&contextes[..].last_mut().unwrap().action.push( element ); 
-			}, 
-			Jeton::GroupeOuvrant => {
-				contextes.push( Contexte::creer() ); 
-			}, 
-			Jeton::GroupeFermant => { 
-				let contexte = contextes.pop().unwrap(); 
-				let e = contexte.resoudre(); 
-				&contextes[..].last_mut().unwrap().pile.push( e ); 
-			} 
-		} 
-	} 
-
-	let contexte = contextes.pop().unwrap(); 
-
-	let etat = contexte.resoudre(); 
-
-	println!("résultat final = {:?}", etat);
+	let mut condition = Condition::creer( liste ); 
+	
+	println!( 
+		"résultat final = {:?}",  
+		condition.resoudre() 
+	); 
 
 } 
 
