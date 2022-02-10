@@ -1,15 +1,23 @@
 #![allow(warnings, unused)] 
 
-
 #[derive(Clone,Debug)] 
-struct Clause {
-	etat: Option<bool> 
+struct Clause { 
+	appelable: String, 
+	etat: bool 
+} 
+
+impl Clause { 
+	fn creer( appelable: String ) -> Self { 
+		Clause { 
+			appelable: appelable, 
+			etat: false 
+		} 
+	} 
 } 
 
 #[derive(Clone,Debug)] 
 enum Jeton { 
 	Clause(Clause), 
-	Etat(bool), 
 	LiaisonOu, 
 	LiaisonEt,
 	GroupeOuvrant, 
@@ -19,29 +27,35 @@ enum Jeton {
 #[derive(Debug)] 
 struct Condition { 
 	etat: Option<bool>, 
-	clauses: Vec<Jeton> 
+	clauses: Vec<Jeton>, 
+	declenchable: bool, 
+	declenchee: bool 
 } 
 
 impl Condition { 
 	fn creer( clauses: Vec<Jeton> ) -> Self { 
 		Condition { 
-			etat: None,  
-			clauses: clauses 
+			etat: None, 
+			clauses: clauses, 
+			declenchable: false, 
+			declenchee: false 
 		} 
 	} 
-	// fn preparer( &mut self ) -> Vec<String> { 
-
-	// } 
+	fn preparer( &mut self ) -> Vec<String> { 
+		self.clauses.iter().filter_map( 
+			|item| match item { 
+				Jeton::Clause( c ) => Some( c.appelable.clone() ), 
+				_ => None 
+			}
+		).collect::<Vec<String>>() 
+	} 
 	fn resoudre( &mut self ) { 
 		let mut condition = vec!( Feuille::creer() ); 
 		for element in &self.clauses { 
-			match element {
-				Jeton::Clause( c ) => {
-					&condition[..].last_mut().unwrap().pile.push( c.etat.unwrap() ); 
-				}
-				Jeton::Etat( e ) => { 
-					&condition[..].last_mut().unwrap().pile.push( *e ); 
-				},
+			match element { 
+				Jeton::Clause( c ) => { 
+					&condition[..].last_mut().unwrap().pile.push( c.etat ); 
+				} 
 				Jeton::LiaisonOu | Jeton::LiaisonEt => { 
 					&condition[..].last_mut().unwrap().action.push( element.clone() ); 
 				}, 
@@ -56,8 +70,8 @@ impl Condition {
 		} 
 		let feuille = condition.pop().unwrap(); 
 		self.etat = Some( feuille.resoudre() ); 
-	}
-}
+	} 
+} 
 
 #[derive(Debug)]
 struct Feuille {
@@ -91,31 +105,32 @@ fn main() {
 
 	let liste = vec!( 
 		Jeton::GroupeOuvrant, 
-			Jeton::Etat(true), 
+			Jeton::Clause( Clause::creer( "a".to_string() ) ), 
 			Jeton::LiaisonOu, 
-			Jeton::Etat(false), 
+			Jeton::Clause( Clause::creer( "b".to_string() ) ), 
 			Jeton::LiaisonEt, 
-			Jeton::Etat(true), 
+			Jeton::Clause( Clause::creer( "c".to_string() ) ), 
 		Jeton::GroupeFermant, 
 		Jeton::LiaisonEt, 
 		Jeton::GroupeOuvrant, 
-			Jeton::Etat(true), 
+			Jeton::Clause( Clause::creer( "d".to_string() ) ), 
 			Jeton::LiaisonEt, 
 			Jeton::GroupeOuvrant, 
-				Jeton::Etat(true), 
+				Jeton::Clause( Clause::creer( "e".to_string() ) ), 
 				Jeton::LiaisonOu, 
-				Jeton::Etat(false), 
+				Jeton::Clause( Clause::creer( "f".to_string() ) ), 
 			Jeton::GroupeFermant, 
 		Jeton::GroupeFermant, 
 		Jeton::LiaisonEt, 
-		Jeton::Etat(true) 
+		Jeton::Clause( Clause::creer( "g".to_string() ) ) 
 	); 
 
 	let mut condition = Condition::creer( liste ); 
-	
+	condition.resoudre(); 
+
 	println!( 
 		"résultat final = {:?}",  
-		condition.resoudre() 
+		condition.etat 
 	); 
 
 } 
