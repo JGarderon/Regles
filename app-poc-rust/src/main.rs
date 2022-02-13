@@ -1,131 +1,213 @@
 #![allow(warnings, unused)] 
 
-use std::iter::Enumerate; 
-// use std::collections::HashMap; 
-
-type IdRegle = usize;
-type IdCondition = usize;
-type IdClause = usize;
-type IdPoids = usize;
-
-type AppelableSimple = fn( contexte: &mut Contexte ) -> bool; 
-type AppelableComplexe = fn( contexte: &mut Contexte, declenchable: bool ) -> bool; 
-
-trait ArbreResolvable<T> {
-  fn resoudre( self, contexte: &mut Contexte, appelables: &T ) -> bool {
-    objet.
-  }
-}
-
-// #[derive(Debug)]
-enum ArbreClauses {
-  Ou( Box<ArbreClauses>, Box<ArbreClauses> ),
-  Et( Box<ArbreClauses>, Box<ArbreClauses> ),
-  Seul( IdClause ) 
-} 
-
-// #[derive(Debug)]
-struct Contexte { 
-  regles: Vec<Regle>, 
-  conditions: Vec<Condition>, 
-  clauses: Vec<Clause>, 
-  tours: Vec<Vec<IdRegle>>, // vecteur groupé de vecteurs triés de règles 
-  tour_conditions: Vec<IdCondition>, 
-  tour_clauses: Vec<IdClause> 
-} 
-
-impl Contexte { 
-  fn creer( regles: Vec<Regle>, conditions: Vec<Condition>, clauses: Vec<Clause> ) -> Self {
-    Contexte { 
-      regles: regles, 
-      conditions: conditions, 
-      clauses: clauses, 
-      tours: vec!(), 
-      tour_conditions: vec!(), 
-      tour_clauses: vec!() 
-    } 
-  }
-  fn compiler( mut self ) { 
-    let mut regroupement = self.regles.iter().map( 
-        |r| r.groupe 
-    ).collect::<Vec<usize>>(); 
-    regroupement.sort();
-    regroupement.dedup(); 
-    self.tours = regroupement.iter().fold( 
-      vec!(), 
-      |mut v_n1, valeur_regroupement| {
-        let groupe = self.regles.iter().enumerate().fold( 
-          vec!(),  
-          |mut v_n2, (i, r)| {
-            if r.groupe == *valeur_regroupement { 
-              v_n2.push( i ) 
-            } 
-            v_n2 
-          }
-        ); 
-        v_n1.push( groupe ); 
-        v_n1 
-      }
-    ); 
-  } 
-  fn jouer( mut self ) -> bool { 
-    if let Some( tour ) = self.tours.pop() { 
-
-      true 
-    } else {
-      false 
-    }
-  }
-} 
-
-// #[derive(Debug)]
-struct Condition { 
-  etat: bool, 
-  arbre: ArbreClauses  
-}
-
-// #[derive(Debug)]
+#[derive(Clone,Debug)] 
 struct Clause { 
-  etat: bool, 
-  fct: AppelableSimple 
-}
-
-// #[derive(Debug)]
-struct Regle { 
-  nom: String, 
-  groupe: usize, 
-  conditions: Vec<IdCondition>, 
-  si: Vec<AppelableSimple>, 
-  sinon: Vec<AppelableSimple>, 
-  finalement: Vec<AppelableComplexe> 
+	appelable: String, 
+	etat: bool 
 } 
 
-impl Regle {
-  fn declencher( self, contexte: &mut Contexte ) -> bool { 
-    let declenchable: bool = self.conditions.iter().fold(
-      true,  
-      |acc, id_condition| { 
-        let id_condition_regle = contexte.tour_conditions[*id_condition]; 
-        acc && contexte.conditions[id_condition_regle].etat 
-      } 
-    ); 
-    if declenchable { 
-      self.si.iter().for_each( 
-          |fct| fct( contexte ) 
-      ); 
-    } else { 
-      self.sinon.iter().for_each( 
-          |fct| fct( contexte ) 
-      ); 
-    }; 
-    self.finalement.iter().for_each( 
-      |fct| fct( contexte, declenchable ) 
-    ); 
-    declenchable 
-  } 
+impl Clause { 
+	fn creer( appelable: String ) -> Self { 
+		Clause { 
+			appelable: appelable, 
+			etat: false 
+		} 
+	} 
+} 
+
+#[derive(Clone,Debug)] 
+enum Jeton<T> { 
+	Appelable(T), 
+	LiaisonOu, 
+	LiaisonEt,
+	GroupeOuvrant, 
+	GroupeFermant 
+} 
+
+#[derive(Debug)]
+struct Feuille<T> {
+	pile: Vec<bool>, 
+	action: Vec<Jeton<T>> 
+} 
+
+impl Feuille<Clause> { 
+	fn creer() -> Self {
+		Feuille { 
+			pile: vec!(), 
+			action: vec!() 
+		} 
+	} 
+	fn resoudre( self )-> bool where Self: Sized { 
+		*&self.pile[1..] 
+			.iter()
+			.zip( &self.action[..] )
+			.fold( 
+				self.pile[0], 
+				|acc,(etat,liaison)| match liaison {
+					Jeton::LiaisonOu => acc | *etat,
+					Jeton::LiaisonEt => acc & *etat, 
+					_ => panic!( "l'arbre résolutoire des clauses est incorrect" ) 
+				} 
+			) 
+	} 
+} 
+
+impl Feuille<Condition> { 
+	fn creer() -> Self {
+		Feuille { 
+			pile: vec!(), 
+			action: vec!() 
+		} 
+	} 
+	fn resoudre( self )-> bool where Self: Sized { 
+		*&self.pile[1..] 
+			.iter()
+			.zip( &self.action[..] )
+			.fold( 
+				self.pile[0], 
+				|acc,(etat,liaison)| match liaison {
+					Jeton::LiaisonOu => acc | *etat,
+					Jeton::LiaisonEt => acc & *etat, 
+					_ => panic!( "l'arbre résolutoire des conditions est incorrect" ) 
+				} 
+			) 
+	} 
+} 
+
+#[derive(Debug)] 
+struct Regle { 
+	etat: Option<bool>, 
+	conditions: Vec<Jeton<Condition>>, 
+	declenchable: bool, 
+	declenchee: bool 
 }
+
+impl Regle { 
+	fn creer( conditions: Vec<Jeton<Condition>> ) -> Self { 
+		Regle { 
+			etat: None, 
+			conditions: conditions, 
+			declenchable: false, 
+			declenchee: false 
+		} 
+	} 
+	fn preparer( &mut self ) -> Vec<String> { 
+		// self.conditions.iter().filter_map( 
+		// 	|item| match item { 
+		// 		Jeton::Appelable( c ) => Some( c.appelable.clone() ), 
+		// 		_ => None 
+		// 	}
+		// ).collect::<Vec<String>>() 
+		vec!() 
+	} 
+	fn resoudre( &mut self ) { 
+		// let mut contexte = vec!( Feuille::<Condition>::creer() ); 
+		// for element in &self.conditions { 
+		// 	match element { 
+		// 		Jeton::Appelable( c ) => { 
+		// 			&contexte[..].last_mut().unwrap().pile.push( c.etat ); 
+		// 		} 
+		// 		Jeton::LiaisonOu | Jeton::LiaisonEt => { 
+		// 			&contexte[..].last_mut().unwrap().action.push( element.clone() ); 
+		// 		}, 
+		// 		Jeton::GroupeOuvrant => { 
+		// 			contexte.push( Feuille::creer() ); 
+		// 		}, 
+		// 		Jeton::GroupeFermant => { 
+		// 			let e = contexte.pop().unwrap().resoudre(); 
+		// 			&contexte[..].last_mut().unwrap().pile.push( e ); 
+		// 		} 
+		// 	} 
+		// } 
+		// let feuille = contexte.pop().unwrap(); 
+		// self.etat = Some( feuille.resoudre() ); 
+	} 
+} 
+
+#[derive(Debug)] 
+struct Condition { 
+	etat: Option<bool>, 
+	clauses: Vec<Jeton<Clause>>, 
+	declenchable: bool, 
+	declenchee: bool 
+} 
+
+impl Condition { 
+	fn creer( clauses: Vec<Jeton<Clause>> ) -> Self { 
+		Condition { 
+			etat: None, 
+			clauses: clauses, 
+			declenchable: false, 
+			declenchee: false 
+		} 
+	} 
+	fn preparer( &mut self ) -> Vec<String> { 
+		self.clauses.iter().filter_map( 
+			|item| match item { 
+				Jeton::Appelable( c ) => Some( c.appelable.clone() ), 
+				_ => None 
+			}
+		).collect::<Vec<String>>() 
+	} 
+	fn resoudre( &mut self ) { 
+		let mut condition = vec!( Feuille::<Clause>::creer() ); 
+		for element in &self.clauses { 
+			match element { 
+				Jeton::Appelable( c ) => { 
+					&condition[..].last_mut().unwrap().pile.push( c.etat ); 
+				} 
+				Jeton::LiaisonOu | Jeton::LiaisonEt => { 
+					&condition[..].last_mut().unwrap().action.push( element.clone() ); 
+				}, 
+				Jeton::GroupeOuvrant => { 
+					condition.push( Feuille::<Clause>::creer() ); 
+				}, 
+				Jeton::GroupeFermant => { 
+					let e = condition.pop().unwrap().resoudre(); 
+					&condition[..].last_mut().unwrap().pile.push( e ); 
+				} 
+			} 
+		} 
+		let feuille = condition.pop().unwrap(); 
+		self.etat = Some( feuille.resoudre() ); 
+	} 
+} 
 
 
 fn main() {
-  println!("Hello, world!");
-}
+
+	let liste = vec!( 
+		Jeton::GroupeOuvrant, 
+			Jeton::Appelable( Clause::creer( "a".to_string() ) ), 
+			Jeton::LiaisonOu, 
+			Jeton::Appelable( Clause::creer( "b".to_string() ) ), 
+			Jeton::LiaisonEt, 
+			Jeton::Appelable( Clause::creer( "c".to_string() ) ), 
+		Jeton::GroupeFermant, 
+		Jeton::LiaisonEt, 
+		Jeton::GroupeOuvrant, 
+			Jeton::Appelable( Clause::creer( "d".to_string() ) ), 
+			Jeton::LiaisonEt, 
+			Jeton::GroupeOuvrant, 
+				Jeton::Appelable( Clause::creer( "e".to_string() ) ), 
+				Jeton::LiaisonOu, 
+				Jeton::Appelable( Clause::creer( "f".to_string() ) ), 
+			Jeton::GroupeFermant, 
+		Jeton::GroupeFermant, 
+		Jeton::LiaisonEt, 
+		Jeton::Appelable( Clause::creer( "g".to_string() ) ) 
+	); 
+
+	let mut condition = Condition::creer( liste ); 
+	condition.resoudre(); 
+
+	println!( 
+		"résultat final = {:?}",  
+		condition.etat 
+	); 
+
+} 
+
+
+
+
