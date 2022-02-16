@@ -1,27 +1,24 @@
 #![allow(warnings, unused)] 
 
-use std::env; 
+// mod resolution; 
+// use crate::resolution::executer as resolution_executer; 
 
-mod resolution_traitement; 
-use crate::resolution_traitement::resolution_traitement; 
-
-static ENV_RESOLUTION: &'static str = "RESOLUTION_TYPE"; 
+mod grammaire; 
+use crate::grammaire::charger as regles_charger; 
 
 fn main() { 
 
-	match env::var( ENV_RESOLUTION ) {
-		Ok( resolution ) => match &resolution[..] { 
-			"traitement" => resolution_traitement(), 
-			indetermine => panic!( 
-				"La résolution {:?} n'est pas supportée", 
-				indetermine 
-			) 
-		} 
+	println!("--- début ---");
+
+	match regles_charger() {
+		Ok( corpus ) => println!( "--- ok : {:?} ---", corpus), // corpsus -> contexte -> resolution_executer( contexte ), 
 		Err( erreur ) => panic!( 
-			"La variable déclarant la résolution a rencontré une erreur : {:?}", 
-			erreur
+			"une erreur est survenue durant le chargement des règles : {:?}", 
+			erreur 
 		) 
 	} 
+	
+	println!("--- fin ---");
 
 }
 

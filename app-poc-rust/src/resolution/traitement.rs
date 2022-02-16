@@ -4,7 +4,7 @@ use std::fs;
 
 static ENV_VAR_CHEMIN: &'static str = "SOURCE_CHEMIN"; 
 
-pub fn resolution_traitement() { 
+pub fn executer() { 
 	
 	let mut fichiers_source: Vec<String> = vec!(); 
 	match env::var( ENV_VAR_CHEMIN ) {

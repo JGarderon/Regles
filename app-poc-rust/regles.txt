@@ -1,0 +1,22 @@
+
+Variable message : "bonjour" 
+
+Condition "offre spéciale" : 
+  date.aujourdhui < "2022-02-16" 
+  & client.est_membre() 
+
+Condition "réduction maximale" : 
+  panier.total_reduction( 25, "%" ) 
+
+Règle "réduction" (90) : 
+  Si 
+    ?"offre spéciale" 
+  Donc 
+    ?"réduction maximale"
+  Alors 
+    panier.reduction( 10, "%" ) 
+  Sinon 
+    panier.reduction( 5, "%" ) 
+  Finalement 
+    panier.mettre_à_jour(), 
+    !"vérifier cohérence du total"
