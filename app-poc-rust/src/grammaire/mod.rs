@@ -4,11 +4,18 @@ use std::io::Error;
 pub mod source; 
 use crate::grammaire::source::Source; 
 
-macro_rules! espaces_optionnels {
+macro_rules! espaces { 
     ($index:ident,$corpus:ident) => {
         match terminal_espace( $index, $corpus ) {
+        	Ok( taille ) => $index += taille, 
+        	_ => () 
+		} 
+    }; 
+    ($index:ident,$corpus:ident,$erreur:expr) => {
+        match terminal_espace( $index, $corpus ) {
+        	Ok( 0 ) => return $erreur, 
 			Ok( taille ) => $index += taille, 
-			_ => ()
+			retour_erreur @ _ => return retour_erreur 
 		} 
     }
 } 
@@ -30,10 +37,9 @@ macro_rules! espaces_optionnels_enregistres {
     }
 }
 
-
-macro_rules! terminal_texte {
+macro_rules! terminal_cle {
 	($index:ident,$corpus:ident,$texte:expr,$ajouter:expr) => { 
-		let taille = terminal_texte( $index, $texte, $corpus ).unwrap(); 
+		let taille = terminal_cle( $index, $texte, $corpus ).unwrap(); 
 		if taille == 0 { 
 			return Ok( 0 ) 
 		} else { 
@@ -47,8 +53,24 @@ macro_rules! terminal_texte {
 			} 
 			$index += taille; 
 		} 
+	}; 
+	($index:ident,$corpus:ident,$texte:expr,$ajouter:expr,$erreur:expr) => { 
+		let taille = terminal_cle( $index, $texte, $corpus ).unwrap(); 
+		if taille == 0 { 
+			return $erreur 
+		} else { 
+			if $ajouter { 
+				$corpus.lemmes.push( 
+					Lemmes::Texte( 
+						$index, 
+						$corpus.source.contenu[$index..$index+taille].iter().collect::<String>() 
+					) 
+				); 
+			} 
+			$index += taille; 
+		} 
 	} 
-}
+} 
 
 macro_rules! ajouter_lemme_grammatical { 
 	($index:ident,$corpus:ident,$lemme:path) => { 
@@ -58,10 +80,48 @@ macro_rules! ajouter_lemme_grammatical {
 	} 
 } 
 
+macro_rules! ajouter_lemme_terminal { 
+	($index:ident,$corpus:ident,$fct:path,$lemme:path) => { 
+		match $fct ( 
+			$index, 
+			$corpus 
+		) { 
+			Ok( taille ) if taille > 0 => { 
+				$corpus.lemmes.push( 
+					$lemme( 
+						$index, 
+						$corpus.source.contenu[$index..$index+taille].iter().collect::<String>()
+					)
+				); 
+				$index += taille; 
+			} 
+			_ => () 
+		} 
+	}; 
+	($index:ident,$corpus:ident,$fct:path,$lemme:path,$erreur:expr) => { 
+		match $fct ( 
+			$index, 
+			$corpus 
+		) { 
+			Ok( taille ) if taille > 0 => { 
+				$corpus.lemmes.push( 
+					$lemme( 
+						$index, 
+						$corpus.source.contenu[$index..$index+taille].iter().collect::<String>()
+					)
+				); 
+				$index += taille; 
+			} 
+			_ => return $erreur 
+		} 
+	} 
+} 
+
 #[derive(Debug)] 
 enum Lemmes { 
 	// terminaux 
 	Espaces(usize, String), 
+	Variable(usize, String), 
 	Texte(usize, String), 
 	// non-terminaux 
 	Regle_Depart(usize), 
@@ -92,7 +152,7 @@ fn terminal_espace( mut index: usize, corpus: &mut Corpus ) -> RetourTerminaux {
 	Ok( index - origine ) 
 } 
 
-fn terminal_texte( mut index: usize, texte: &str, corpus: &mut Corpus ) -> RetourTerminaux { 
+fn terminal_cle( mut index: usize, texte: &str, corpus: &mut Corpus ) -> RetourTerminaux { 
 	let taille = texte.chars().count(); 
 	if ( index + taille ) >= corpus.source.contenu.len() { 
 		return Err( "terminal_texte source insuffisante" ); 
@@ -106,31 +166,69 @@ fn terminal_texte( mut index: usize, texte: &str, corpus: &mut Corpus ) -> Retou
 	}
 } 
 
-fn terminal_nom_variable( mut index: usize, corpus: &mut Corpus, ajouter: bool ) -> RetourTerminaux { 
+fn terminal_variable( mut index: usize, corpus: &mut Corpus ) -> RetourTerminaux { 
 	let max = corpus.source.contenu.len(); 
 	let origine = index.clone(); 
 	while index < max { 
 		match corpus.source.contenu[index] { 
 			'a' ... 'z' 
 				| 'A' ... 'Z' 
-				| '0' ... '9'
+				| '0' ... '9' 
 				| '.' 
 				| '_'  => (), 
-			_ => break
+			_ => break 
 		} 
 		index += 1; 
 	} 
 	Ok( index - origine ) 
+} 
+
+fn terminal_texte( mut index: usize, corpus: &mut Corpus ) -> RetourTerminaux { 
+	let max = corpus.source.contenu.len(); 
+	let origine = index.clone(); 
+	if index < max && corpus.source.contenu[index] != '"' { 
+		return Ok( 0 ); 
+	} 
+	index += 1; 
+	let mut ouvert = true; 
+	while index < max && ouvert { 
+		match corpus.source.contenu[index] { 
+			'"' => ouvert = false, 
+			_ => () 
+		} 
+		index += 1; 
+	} 
+	if ouvert { 
+		Err( "Un texte n'a pas été fermé alors que la source est tarie" ) 
+	} else { 
+		Ok( index - origine ) 
+	} 
 }
 
 fn nonterminal_variable( mut index: usize, corpus: &mut Corpus, ajouter: bool ) -> RetourTerminaux { 
 	let origine = index.clone(); 
-	espaces_optionnels!( index, corpus ); 
-	terminal_texte!( index, corpus, "Variable", false ); 
+	espaces!( index, corpus ); 
+	terminal_cle!( index, corpus, "Variable", false ); 
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Regle_Depart ); 
-	espaces_optionnels!( index, corpus ); 
-
-	// le reste 
+	espaces!( index, corpus, Err( "Le séparateur espace non-trouvé" ) ); 
+	ajouter_lemme_terminal!( 
+		index, 
+		corpus, 
+		terminal_variable, 
+		Lemmes::Variable, 
+		Err( "Un nom de variable est obligatoire" ) 
+	); 
+	espaces!( index, corpus, Err( "Le séparateur espace non-trouvé" ) ); 
+	terminal_cle!( index, corpus, ":", false, Err("Le séparateur n'a pas été trouvé") ); 
+	espaces!( index, corpus, Err( "Le séparateur espace non-trouvé" ) ); 
+	ajouter_lemme_terminal!( 
+		index, 
+		corpus, 
+		terminal_texte, 
+		Lemmes::Texte, 
+		Err( "Un texte est obligatoire" ) 
+	); 
+	ajouter_lemme_grammatical!( index, corpus, Lemmes::Regle_Fin ); 
 	// println!("{:?}", corpus.source.contenu[0..index].iter().collect::<String>() );
 	Ok( index - origine ) 
 } 
@@ -142,7 +240,10 @@ pub fn charger() -> Result<Corpus, Error> {
 		lemmes: vec!() 
 	}; 
 
-	println!( "r = {:?}", nonterminal_variable( 0, &mut corpus, true ) ); 
+	let i = nonterminal_variable( 0, &mut corpus, true ); 
+	println!( "r (1) = {:?}", i ); 
+	let i = nonterminal_variable( i.unwrap(), &mut corpus, true ); 
+	println!( "r (2) = {:?}", i ); 
 
 	Ok( corpus ) 
 

@@ -1,9 +1,12 @@
 
-Variable message : 
+Variable message_bonjour : 
   "bonjour" 
 
+Variable message_1 : 
+  1 
+
 Condition "offre spéciale" : 
-  date.aujourdhui < "2022-02-16" 
+  date.aujourdhui( "<", "2022-02-16" ) 
   & client.est_membre() 
 
 Condition "réduction maximale" : 
