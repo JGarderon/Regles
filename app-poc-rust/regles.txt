@@ -1,5 +1,6 @@
 
-Variable message : "bonjour" 
+Variable message : 
+  "bonjour" 
 
 Condition "offre spéciale" : 
   date.aujourdhui < "2022-02-16" 
