@@ -3,6 +3,7 @@ use crate::espaces;
 use crate::ajouter_lemme_terminal; 
 use crate::ajouter_lemme_grammatical; 
 use crate::terminal_cle; 
+use crate::nonterminal_regle_partie; 
 
 use crate::grammaire::source::Source; 
 
@@ -15,11 +16,21 @@ pub enum Lemmes {
 	Texte(usize, String), 
 	// non-terminaux 
 	Regle_Depart(usize), 
+	Regle_Poids(usize, String), 
 	Regle_Fin(usize), 
+	Variable_Depart(usize), 
+	Variable_Fin(usize), 
 	Condition_Depart(usize), 
 	Condition_Fin(usize), 
 	Clause_Depart(usize), 
 	Clause_Fin(usize), 
+	Appelable_Depart(usize), 
+	Appelable_Fin(usize), 
+	Conditionnel(usize, String), 
+	// logique 
+	Suite(usize), 
+	Et(usize), 
+	Ou(usize) 
 } 
 
 #[derive(Debug)]
@@ -115,6 +126,20 @@ fn terminal_texte( mut index: usize, corpus: &mut Corpus ) -> RetourTerminaux {
 	} 
 } 
 
+pub fn nonterminal_conditionnel( mut index: usize, corpus: &mut Corpus, _ajouter: bool ) -> RetourTerminaux { 
+	let origine = index.clone(); 
+	espaces!( index, corpus ); 
+	terminal_cle!( index, corpus, "?", false ); 
+	ajouter_lemme_terminal!( 
+		index, 
+		corpus, 
+		terminal_texte, 
+		Lemmes::Conditionnel, 
+		Err( "Un nom de condition appelable est obligatoire" ) 
+	); 
+	Ok( index - origine ) 
+} 
+
 pub fn nonterminal_valeur( mut index: usize, corpus: &mut Corpus, _ajouter: bool ) -> RetourTerminaux { 
 	let origine = index.clone(); 
 	espaces!( index, corpus ); 
@@ -133,26 +158,80 @@ pub fn nonterminal_variable( mut index: usize, corpus: &mut Corpus, ajouter: boo
 	let origine = index.clone(); 
 	espaces!( index, corpus ); 
 	terminal_cle!( index, corpus, "Variable", false ); 
-	ajouter_lemme_grammatical!( index, corpus, Lemmes::Regle_Depart ); 
-	espaces!( index, corpus, Err( "Le séparateur espace non-trouvé" ) ); 
+	ajouter_lemme_grammatical!( index, corpus, Lemmes::Variable_Depart ); 
+	espaces!( index, corpus, Err( "Le séparateur espace non-trouvé #6" ) ); 
 	ajouter_lemme_terminal!( 
 		index, 
 		corpus, 
 		terminal_variable, 
 		Lemmes::Variable, 
-		Err( "Un nom de variable est obligatoire" ) 
+		Err( "Un nom de variable à définir est obligatoire" ) 
 	); 
 	espaces!( index, corpus ); 
 	terminal_cle!( index, corpus, ":", false, Err("Le séparateur n'a pas été trouvé") ); 
-	espaces!( index, corpus, Err( "Le séparateur espace non-trouvé" ) ); 
-	match nonterminal_valeur( index, corpus, true ) {
-		Ok( 0 ) => return Err( "Le séparateur espace non-trouvé" ), 
+	espaces!( index, corpus, Err( "Le séparateur espace non-trouvé  #5" ) ); 
+	match nonterminal_valeur( index, corpus, true ) { 
+		Ok( 0 ) => return Err( "Une valeur est attendue lors de la définition d'une variable" ), 
 		Ok( taille ) => index += taille, 
 		Err( erreur ) => return Err( erreur ) 
 	} 
-	ajouter_lemme_grammatical!( index, corpus, Lemmes::Regle_Fin ); 
+	ajouter_lemme_grammatical!( index, corpus, Lemmes::Variable_Fin ); 
 	// println!("{:?}", corpus.source.contenu[0..index].iter().collect::<String>() );
 	Ok( index - origine ) 
+} 
+
+pub fn nonterminal_appelable( mut index: usize, corpus: &mut Corpus, ajouter: bool ) -> RetourTerminaux { 
+	let origine = index.clone(); 
+	espaces!( index, corpus );  
+	ajouter_lemme_terminal!( 
+		index, 
+		corpus, 
+		terminal_variable, 
+		Lemmes::Variable, 
+		Err( "Un nom de variable appelable est obligatoire" ) 
+	); 
+	espaces!( index, corpus ); 
+	if terminal_cle!( index, corpus, "(" ) == 0 { 
+		return Err( "L'appel ouvrant n'est pas trouvé" ); 
+	} else { 
+		index += 1; 
+	}
+	ajouter_lemme_grammatical!( index, corpus, Lemmes::Appelable_Depart ); 
+	loop {
+		espaces!( index, corpus ); 
+		match nonterminal_valeur( index, corpus, true ) { 
+			Ok( 0 ) => break, 
+			Ok( taille ) => index += taille, 
+			Err( erreur ) => { println!("err : {:?}", erreur); break; } 
+		} 
+		espaces!( index, corpus ); 
+		if terminal_cle!( index, corpus, "," ) == 0 { 
+			break; 
+		} else { 
+			index += 1; 
+		}
+	} 
+	espaces!( index, corpus ); 
+	if terminal_cle!( index, corpus, ")" ) == 0 { 
+		return Err( "L'appel fermant n'est pas trouvé" ); 
+	} else {
+		index += 1; 
+	}
+	ajouter_lemme_grammatical!( index, corpus, Lemmes::Appelable_Fin ); 
+	// println!("{:?}", corpus.source.contenu[0..index].iter().collect::<String>() ); 
+	Ok( index - origine ) 
+} 
+
+pub fn nonterminal_conditionnel_ou_appelable( mut index: usize, corpus: &mut Corpus, _ajouter: bool ) -> RetourTerminaux { 
+	match nonterminal_conditionnel( index, corpus, true ) { 
+		Ok( 0 ) => (), 
+		Ok( taille ) => return Ok( taille ), 
+		Err( erreur ) => return Err( erreur ) 
+	} 
+	match nonterminal_appelable( index, corpus, true ) { 
+		Ok( taille ) => return Ok( taille ), 
+		Err( erreur ) => return Err( erreur ) 
+	} 
 } 
 
 pub fn nonterminal_condition( mut index: usize, corpus: &mut Corpus, ajouter: bool ) -> RetourTerminaux { 
@@ -160,20 +239,112 @@ pub fn nonterminal_condition( mut index: usize, corpus: &mut Corpus, ajouter: bo
 	espaces!( index, corpus ); 
 	terminal_cle!( index, corpus, "Condition", true ); 
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Condition_Depart ); 
-	espaces!( index, corpus, Err( "Le séparateur espace non-trouvé" ) ); 
+	espaces!( index, corpus, Err( "Le séparateur espace non-trouvé #2" ) ); 
 	ajouter_lemme_terminal!( 
 		index, 
 		corpus, 
 		terminal_texte, 
 		Lemmes::Texte, 
-		Err( "Un nom de variable est obligatoire" ) 
+		Err( "Un nom de condition à définir est obligatoire" ) 
 	); 
 	espaces!( index, corpus ); 
 	terminal_cle!( index, corpus, ":", false, Err("Le séparateur n'a pas été trouvé") ); 
-	espaces!( index, corpus, Err( "Le séparateur espace non-trouvé" ) ); 
+	espaces!( index, corpus, Err( "Le séparateur espace non-trouvé #1" ) ); 
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Clause_Depart ); 
-	
+	match nonterminal_conditionnel_ou_appelable( index, corpus, true ) { 
+		Ok( 0 ) => return Err( "Une condition est sans aucune clause appelable" ), 
+		Ok( taille ) => index += taille, 
+		Err( erreur ) => return Err( erreur )
+	} 
+	loop { 
+		espaces!( index, corpus ); 
+		if terminal_cle!( index, corpus, "et" ) == 0 { 
+			if terminal_cle!( index, corpus, "ou" ) == 0 { 
+				break; 
+			} else { 
+				ajouter_lemme_grammatical!( index, corpus, Lemmes::Ou ); 
+				index += 2; 
+			}
+		} else { 
+			ajouter_lemme_grammatical!( index, corpus, Lemmes::Et ); 
+			index += 2; 
+		} 
+		espaces!( index, corpus ); 
+		match nonterminal_appelable( index, corpus, true ) { 
+			Ok( 0 ) => return Err( "Un opérateur logique de condition est sans aucune clause appelable" ), 
+			Ok( taille ) => index += taille, 
+			Err( erreur ) => return Err( erreur ) 
+		} 
+	}
+	ajouter_lemme_grammatical!( index, corpus, Lemmes::Clause_Fin ); 
 	// println!("{:?}", corpus.source.contenu[0..index].iter().collect::<String>() );
+	Ok( index - origine ) 
+} 
+
+pub fn nonterminal_regle_partie_si( mut index: usize, corpus: &mut Corpus, _ajouter: bool ) -> RetourTerminaux { 
+	let origine = index.clone(); 
+	espaces!( index, corpus ); 
+	terminal_cle!( index, corpus, "Si", false, Err("L'opérateur de règle 'Si' est obligatoire") ); 
+	match nonterminal_conditionnel( index, corpus, true ) { 
+		Ok( 0 ) => (), 
+		Ok( taille ) => index += taille, 
+		Err( erreur ) => return Err( erreur ) 
+	} 
+	loop { 
+		espaces!( index, corpus ); 
+		if terminal_cle!( index, corpus, "et" ) == 0 { 
+			if terminal_cle!( index, corpus, "ou" ) == 0 { 
+				break; 
+			} else { 
+				ajouter_lemme_grammatical!( index, corpus, Lemmes::Ou ); 
+				index += 2; 
+			}
+		} else { 
+			ajouter_lemme_grammatical!( index, corpus, Lemmes::Et ); 
+			index += 2; 
+		} 
+		espaces!( index, corpus ); 
+		match nonterminal_conditionnel( index, corpus, true ) { 
+			Ok( 0 ) => return Err( "Une condition doit être ajouté après un opérateur 'Si'" ), 
+			Ok( taille ) => index += taille, 
+			Err( erreur ) => return Err( erreur ) 
+		} 
+	} 
+	Ok( index - origine ) 
+} 
+
+pub fn nonterminal_regle( mut index: usize, corpus: &mut Corpus, ajouter: bool ) -> RetourTerminaux { 
+	let origine = index.clone(); 
+	espaces!( index, corpus ); 
+	if terminal_cle!( index, corpus, "Règle" ) == 0 { 
+		return Ok( 0 ); 
+	}
+	ajouter_lemme_grammatical!( index, corpus, Lemmes::Regle_Depart ); 
+	index += 5; 
+	espaces!( index, corpus, Err( "Un séparateur est obligatoire à la déclaration d'une règle" ) ); 
+	ajouter_lemme_terminal!( 
+		index, 
+		corpus, 
+		terminal_texte, 
+		Lemmes::Texte, 
+		Err( "Un nom de règle à définir est obligatoire" ) 
+	); 
+	espaces!( index, corpus ); 
+	terminal_cle!( index, corpus, "(", false, Err("L'ouverture de poids n'est pas trouvée") ); 
+	ajouter_lemme_terminal!( 
+		index, 
+		corpus, 
+		terminal_nombre, 
+		Lemmes::Regle_Poids, 
+		Err( "Un poids de règle est obligatoire" ) 
+	); 
+	terminal_cle!( index, corpus, ")", false, Err("La fermeture de poids n'est pas trouvée") ); 
+	espaces!( index, corpus ); 
+	terminal_cle!( index, corpus, ":", false, Err("Le séparateur de règle n'a pas été trouvé") ); 
+	index += nonterminal_regle_partie_si( index, corpus, true )?; 
+	nonterminal_regle_partie!( index, corpus, "Alors" ); 
+	nonterminal_regle_partie!( index, corpus, "Sinon" ); 
+	nonterminal_regle_partie!( index, corpus, "Finalement" ); 
 	Ok( index - origine ) 
 } 
 
