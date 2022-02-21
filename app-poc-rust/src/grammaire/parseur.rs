@@ -1,4 +1,6 @@
 
+use crate::grammaire::RetourTerminaux;
+
 use crate::espaces; 
 use crate::ajouter_lemme_terminal; 
 use crate::ajouter_lemme_grammatical; 
@@ -38,8 +40,6 @@ pub struct Corpus {
 	pub source: Source, 
 	pub lemmes: Vec<Lemmes> 
 } 
-
-type RetourTerminaux = Result<usize, &'static str>;
 
 fn terminal_espace( mut index: usize, corpus: &mut Corpus ) -> RetourTerminaux {
 	let max = corpus.source.contenu.len(); 
@@ -94,6 +94,8 @@ fn terminal_nombre( mut index: usize, corpus: &mut Corpus ) -> RetourTerminaux {
 	let mut point: usize = 0; 
 	while index < max { 
 		match corpus.source.contenu[index] { 
+			'-' if origine == index => (), 
+			'-' if origine < index => return Err( "Expression de nombre en erreur" ), 
 			'0' ... '9' => (), 
 			'.' if point == 0 => point += 1, 
 			'.' if point > 0 => return Err( "Un nombre est en erreur" ), 
@@ -346,6 +348,42 @@ pub fn nonterminal_regle( mut index: usize, corpus: &mut Corpus, ajouter: bool )
 	nonterminal_regle_partie!( index, corpus, "Sinon" ); 
 	nonterminal_regle_partie!( index, corpus, "Finalement" ); 
 	Ok( index - origine ) 
+} 
+
+pub fn charger( chemin: String ) -> Result<Corpus, &'static str> { 
+	let mut corpus = Corpus {
+		source: match Source::creer( chemin ) { 
+			Ok( source ) => source, 
+			Err( _ ) => return Err( 
+				"le fichier source n'est pas disponible" 
+			) 
+		}, 
+		lemmes: vec!() 
+	}; 
+	let mut index: usize = 0; 
+	let mut stop: bool = false; 
+	while index < corpus.source.contenu.len() && stop == false { 
+		stop = true; 
+		let taille = nonterminal_variable( index, &mut corpus, true )?; 
+		if taille > 0 { 
+			stop = false; 
+			index += taille; 
+			continue; 
+		} 
+		let taille = nonterminal_condition( index, &mut corpus, true )?; 
+		if taille > 0 { 
+			stop = false; 
+			index += taille; 
+			continue; 
+		} 
+		let taille = nonterminal_regle( index, &mut corpus, true )?; 
+		if taille > 0 { 
+			stop = false; 
+			index += taille; 
+			continue; 
+		}  
+	} 
+	Ok( corpus ) 
 } 
 
 

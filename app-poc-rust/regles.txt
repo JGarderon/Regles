@@ -19,8 +19,8 @@ Règle "réduction" (90) :
   Si 
     ?"offre spéciale" et ?"date offre spéciale" 
   Alors 
-    panier.reduction( 10, "%" ) 
+    panier.reduction( 10.5, "%" ) 
   Sinon 
-    panier.reduction( 5, "%" ) 
+    panier.reduction( -5, "%" ) 
   Finalement 
     panier.mettre_a_jour() 

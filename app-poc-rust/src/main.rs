@@ -1,22 +1,18 @@
 #![allow(warnings, unused)] 
 
+mod communs; 
+
 // mod resolution; 
 // use crate::resolution::executer as resolution_executer; 
 
 mod grammaire; 
-use crate::grammaire::charger as regles_charger; 
+use crate::grammaire::constructeur::construire; 
 
 fn main() { 
 
 	println!("--- début ---");
 
-	match regles_charger() {
-		Ok( corpus ) => println!( "--- ok : {:?} ---", corpus), // corpsus -> contexte -> resolution_executer( contexte ), 
-		Err( erreur ) => panic!( 
-			"une erreur est survenue durant le chargement des règles : {:?}", 
-			erreur 
-		) 
-	} 
+	println!( "--- intermédiaire : {:?} ---", construire() ); 
 	
 	println!("--- fin ---");
 

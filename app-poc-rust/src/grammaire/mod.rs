@@ -1,42 +1,16 @@
 
-use std::io::Error; 
+type RetourTerminaux = Result<usize, &'static str>;
 
 pub mod source; 
 use crate::grammaire::source::Source; 
 
 pub mod parseur; 
 use crate::grammaire::parseur::Corpus; 
-use crate::grammaire::parseur::nonterminal_variable;
-use crate::grammaire::parseur::nonterminal_condition;
-use crate::grammaire::parseur::nonterminal_regle;
+use crate::grammaire::parseur::nonterminal_variable; 
+use crate::grammaire::parseur::nonterminal_condition; 
+use crate::grammaire::parseur::nonterminal_regle; 
 
-pub fn charger() -> Result<Corpus, Error> { 
-
-	let mut corpus = Corpus {
-		source: Source::creer( "regles.txt".to_string() ).unwrap(), 
-		lemmes: vec!() 
-	}; 
-
-	let mut index = 0; 
-	let i = nonterminal_variable( index, &mut corpus, true ); 
-	println!( "r (1) = {:?}", i );
-	index += i.unwrap(); 
-	let i = nonterminal_variable( index, &mut corpus, true ); 
-	println!( "r (2) = {:?}", i ); 
-	index += i.unwrap(); 
-	let i = nonterminal_condition( index, &mut corpus, true ); 
-	println!( "r (3) = {:?}", i ); 
-	index += i.unwrap(); 
-	let i = nonterminal_condition( index, &mut corpus, true ); 
-	println!( "r (4) = {:?}", i ); 
-	index += i.unwrap(); 
-	let i = nonterminal_regle( index, &mut corpus, true ); 
-	println!( "r (5) = {:?}", i ); 
-	index += i.unwrap(); 
-
-	Ok( corpus ) 
-
-} 
+pub mod constructeur; 
 
 #[macro_export] 
 macro_rules! nonterminal_regle_partie {
