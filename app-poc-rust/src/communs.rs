@@ -1,7 +1,7 @@
 
 #[derive(Debug)]
 pub enum Types {
-	Nombre(isize), 
+	Nombre(f64), 
 }
 
 
