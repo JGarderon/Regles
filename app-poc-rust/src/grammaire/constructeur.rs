@@ -55,6 +55,7 @@ fn definir_variable( iterable: &mut Vec<Lemmes>, environnement: &mut Environneme
 pub fn construire() -> Result<Environnement, &'static str> { 
 	let mut corpus = charger( "regles.txt".to_string() )?; 
 	let mut environnement = Environnement::creer(); 
+	println!("{:?}", corpus.lemmes); 
 	corpus.lemmes.reverse(); 
 	while let Some( lemme ) = corpus.lemmes.pop() { 
 		println!("=== {:?}", lemme);

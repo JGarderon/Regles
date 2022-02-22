@@ -239,7 +239,7 @@ pub fn nonterminal_conditionnel_ou_appelable( mut index: usize, corpus: &mut Cor
 pub fn nonterminal_condition( mut index: usize, corpus: &mut Corpus, ajouter: bool ) -> RetourTerminaux { 
 	let origine = index.clone(); 
 	espaces!( index, corpus ); 
-	terminal_cle!( index, corpus, "Condition", true ); 
+	terminal_cle!( index, corpus, "Condition", false ); 
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Condition_Depart ); 
 	espaces!( index, corpus, Err( "Le séparateur espace non-trouvé #2" ) ); 
 	ajouter_lemme_terminal!( 
@@ -279,6 +279,7 @@ pub fn nonterminal_condition( mut index: usize, corpus: &mut Corpus, ajouter: bo
 		} 
 	}
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Clause_Fin ); 
+	ajouter_lemme_grammatical!( index, corpus, Lemmes::Condition_Fin ); 
 	// println!("{:?}", corpus.source.contenu[0..index].iter().collect::<String>() );
 	Ok( index - origine ) 
 } 
