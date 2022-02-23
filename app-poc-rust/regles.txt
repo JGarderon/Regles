@@ -13,7 +13,7 @@ Condition "offre spéciale" :
   client.est_membre() 
 
 Condition "réduction maximale" : 
-  panier.total_reduction( 25, "%" ) 
+  panier.total_reduction_verifier( "<", 25, "%" ) 
 
 Règle "réduction" (90) : 
   Si 

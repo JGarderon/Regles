@@ -12,7 +12,7 @@ fn main() {
 
 	println!("--- début ---");
 
-	println!( "--- intermédiaire : {:?} ---", construire() ); 
+	println!( "--- intermédiaire : {:#?} ---", construire() ); 
 	
 	println!("--- fin ---");
 

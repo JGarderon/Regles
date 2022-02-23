@@ -14,12 +14,17 @@ pub mod constructeur;
 
 #[macro_export] 
 macro_rules! nonterminal_regle_partie {
-	($index:ident,$corpus:ident,$cle:expr) => {
+	($index:ident,$corpus:ident,$cle:expr,$taille:expr,$obligatoire:expr,$lemme_depart:path,$lemme_fin:path) => {
 		espaces!( $index, $corpus ); 
 		if terminal_cle!( $index, $corpus, $cle ) == 0 { 
-			return Ok( 0 ); 
+			if $obligatoire {
+				return Ok( 0 ); 
+			} else { 
+				return Err( "Une clé est obligatoire" ); 
+			} 
 		} 
-		$index += 10; 
+		ajouter_lemme_grammatical!( $index, $corpus, $lemme_depart ); 
+		$index += $taille; 
 		match nonterminal_appelable( $index, $corpus, true ) { 
 			Ok( 0 ) => return Err( "Aucune clause appelable après une clé" ), 
 			Ok( taille ) => $index += taille, 
@@ -41,6 +46,7 @@ macro_rules! nonterminal_regle_partie {
 				Err( erreur ) => return Err( erreur ) 
 			} 
 		} 
+		ajouter_lemme_grammatical!( $index, $corpus, $lemme_fin ); 
 	}
 }
 

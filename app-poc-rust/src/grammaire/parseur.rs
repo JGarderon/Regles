@@ -32,7 +32,16 @@ pub enum Lemmes {
 	// logique 
 	Suite(usize), 
 	Et(usize), 
-	Ou(usize) 
+	Ou(usize), 
+	// règle 
+	Si_Depart(usize), 
+	Si_Fin(usize), 
+	Alors_Depart(usize), 
+	Alors_Fin(usize), 
+	Sinon_Depart(usize), 
+	Sinon_Fin(usize), 
+	Finalement_Depart(usize), 
+	Finalement_Fin(usize), 
 } 
 
 #[derive(Debug)]
@@ -321,7 +330,7 @@ pub fn nonterminal_regle( mut index: usize, corpus: &mut Corpus, ajouter: bool )
 	espaces!( index, corpus ); 
 	if terminal_cle!( index, corpus, "Règle" ) == 0 { 
 		return Ok( 0 ); 
-	}
+	} 
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Regle_Depart ); 
 	index += 5; 
 	espaces!( index, corpus, Err( "Un séparateur est obligatoire à la déclaration d'une règle" ) ); 
@@ -344,10 +353,13 @@ pub fn nonterminal_regle( mut index: usize, corpus: &mut Corpus, ajouter: bool )
 	terminal_cle!( index, corpus, ")", false, Err("La fermeture de poids n'est pas trouvée") ); 
 	espaces!( index, corpus ); 
 	terminal_cle!( index, corpus, ":", false, Err("Le séparateur de règle n'a pas été trouvé") ); 
+	ajouter_lemme_grammatical!( index, corpus, Lemmes::Si_Depart ); 
 	index += nonterminal_regle_partie_si( index, corpus, true )?; 
-	nonterminal_regle_partie!( index, corpus, "Alors" ); 
-	nonterminal_regle_partie!( index, corpus, "Sinon" ); 
-	nonterminal_regle_partie!( index, corpus, "Finalement" ); 
+	ajouter_lemme_grammatical!( index, corpus, Lemmes::Si_Fin ); 
+	nonterminal_regle_partie!( index, corpus, "Alors", 5, true, Lemmes::Alors_Depart, Lemmes::Alors_Fin ); 
+	nonterminal_regle_partie!( index, corpus, "Sinon", 5, false, Lemmes::Sinon_Depart, Lemmes::Sinon_Fin ); 
+	nonterminal_regle_partie!( index, corpus, "Finalement", 10, false, Lemmes::Finalement_Depart, Lemmes::Finalement_Fin ); 
+	ajouter_lemme_grammatical!( index, corpus, Lemmes::Regle_Fin ); 
 	Ok( index - origine ) 
 } 
 
