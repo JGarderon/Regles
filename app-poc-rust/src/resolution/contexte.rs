@@ -29,13 +29,13 @@ pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte
 	).collect::<Vec<Vec<&Types>>>().into_iter().flat_map( 
 		|item| item 
 	).collect::<Vec<&Types>>(); 
-	clauses.sort_unstable_by(
+	clauses.sort_unstable_by( 
 		// échouera si NaN pour les f64 
 		// https://doc.rust-lang.org/std/primitive.slice.html#method.sort_unstable_by 
 		|a, b| a.partial_cmp(b).unwrap() 
 	); 
 	clauses.dedup(); 
-	let mut regles: Vec<(&String,Vec<&'env Types>)> = vec!(); 
+	let mut regles: Vec<(f64,(&String,Vec<&'env Types>))> = vec!(); 
 	for (regle_cle, regle_valeur) in environnement.regles.iter() { 
 		let mut regle_clauses: Vec<&Types> = vec!(); 
 		{ 
@@ -79,11 +79,22 @@ pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte
 				_ => clause_avant 
 			}
 		).collect::<Vec<&Types>>(); 
-		regles.push( (
-			&regle_cle, 
-			regle_clauses 
-		) ); 
+		regles.push( 
+			( 
+				regle_valeur.0,
+				(
+					&regle_cle, 
+					regle_clauses 
+				) 
+			) 
+		); 
 	} 
+	regles.sort_unstable_by( 
+		|a, b| a.0.partial_cmp( &b.0 ).unwrap() 
+	); 
+	let regles = regles.into_iter().map( 
+		|item| item.1 
+	).collect::<Vec<(&String,Vec<&'env Types>)>>(); 
 	Ok( 
 		Contexte { 
 			environnement: environnement, 
@@ -93,18 +104,4 @@ pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte
 		} 
 	) 
 } 
-
-
-
-
-// regles: 
-// 	si => vec<&Clause> => concaténation des conditions 
-// 	alors => vec<Types> 
-// 	sinon => vec<Types> 
-// 	finalement => vec<Types> 
-
-
-
-
-
 
