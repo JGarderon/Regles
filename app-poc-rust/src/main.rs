@@ -6,15 +6,27 @@ mod communs;
 // use crate::resolution::executer as resolution_executer; 
 
 mod grammaire; 
-use crate::grammaire::constructeur::construire; 
+use crate::grammaire::constructeur::construire as environnement_construire; 
 
-fn main() { 
+mod resolution; 
+use crate::resolution::contexte::construire as contexte_resolution; 
+
+fn main() -> Result<(), &'static str> { 
 
 	println!("--- début ---");
 
-	println!( "--- intermédiaire : {:#?} ---", construire() ); 
+	let environnement = environnement_construire( 
+		"regles.txt".to_string() 
+	)?; 
+
+	println!( 
+		"--- intermédiaire : {:?} ---", 
+		contexte_resolution( &environnement)? 
+	); 
 	
 	println!("--- fin ---");
+
+	Ok( () ) 
 
 }
 

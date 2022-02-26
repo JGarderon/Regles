@@ -5,12 +5,16 @@ Variable message_bonjour :
 Variable message_1 : 
   1 
 
+Condition "est membre": 
+  client.est_membre( 50, "jours" ) 
+
 Condition "offre spéciale" : 
-  ?"test"
+  ?"est membre"
   et 
+  client.total_historique( ">", 1000 ) 
+
+Condition "date offre spéciale" : 
   date.aujourdhui( "<", "2022-02-16" ) 
-  et 
-  client.est_membre() 
 
 Condition "réduction maximale" : 
   panier.total_reduction_verifier( "<", 25, "%" ) 

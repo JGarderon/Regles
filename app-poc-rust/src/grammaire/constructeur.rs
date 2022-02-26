@@ -9,22 +9,22 @@ use crate::communs::Types;
 
 #[derive(Debug)]
 pub struct Environnement { 
-	variables: HashMap<String,Types>, 
-	condition: HashMap<String,Vec<Types>>, 
-	regles: HashMap<String,(
+	pub variables: HashMap<String,Types>, 
+	pub conditions: HashMap<String,Vec<Types>>, 
+	pub regles: HashMap<String,( 
 		f64, 
 		Vec<Types>, 
 		Vec<Types>, 
 		Vec<Types>, 
 		Vec<Types> 
-	)>
+	)> 
 } 
 
 impl Environnement { 
 	fn creer() -> Self { 
 		Environnement { 
 			variables: HashMap::new(), 
-			condition: HashMap::new(), 
+			conditions: HashMap::new(), 
 			regles: HashMap::new()  
 		} 
 	} 
@@ -38,7 +38,7 @@ impl Environnement {
 		self.variables.get( nom ) 
 	} 
 	fn conditionner( &mut self, nom: String, condition: Vec<Types> ) { 
-		self.condition.insert( nom, condition ); 
+		self.conditions.insert( nom, condition ); 
 	} 
 	fn regler( &mut self, nom: String, poids: f64, si: Vec<Types>, alors: Vec<Types>, sinon: Vec<Types>, finalement: Vec<Types> ) { 
 		self.regles.insert( 
@@ -116,6 +116,7 @@ fn definir_condition( iterable: &mut Vec<Lemmes>, environnement: &mut Environnem
 			Some( Lemmes::Ou( _ ) ) => clauses.push( Types::Ou ), 
 			Some( Lemmes::Variable( _, nom ) ) => clauses.push( Types::Appelable( 
 				nom, 
+				false,
 				retrouver_appelable( iterable )? 
 			) ), 
 			None => return Err( "Une clause n'est pas terminée" ), 
@@ -177,6 +178,7 @@ fn definir_regle( iterable: &mut Vec<Lemmes>, environnement: &mut Environnement 
 					}, 
 					Some( Lemmes::Variable( _, nom ) ) => alors.push( Types::Appelable( 
 						nom, 
+						false, 
 						retrouver_appelable( iterable )? 
 					) ), 
 					None => return Err( "Clé 'Alors' non-terminée" ), 
@@ -193,6 +195,7 @@ fn definir_regle( iterable: &mut Vec<Lemmes>, environnement: &mut Environnement 
 					}, 
 					Some( Lemmes::Variable( _, nom ) ) => sinon.push( Types::Appelable( 
 						nom, 
+						false, 
 						retrouver_appelable( iterable )? 
 					) ), 
 					None => return Err( "Clé 'Sinon' non-terminée" ), 
@@ -209,6 +212,7 @@ fn definir_regle( iterable: &mut Vec<Lemmes>, environnement: &mut Environnement 
 					}, 
 					Some( Lemmes::Variable( _, nom ) ) => finalement.push( Types::Appelable( 
 						nom, 
+						false, 
 						retrouver_appelable( iterable )? 
 					) ), 
 					None => return Err( "Clé 'Finalement' non-terminée" ), 
@@ -233,8 +237,8 @@ fn definir_regle( iterable: &mut Vec<Lemmes>, environnement: &mut Environnement 
 	Ok( () ) 
 } 
 
-pub fn construire() -> Result<Environnement, &'static str> { 
-	let mut corpus = charger( "regles.txt".to_string() )?; 
+pub fn construire( chemin: String ) -> Result<Environnement, &'static str> { 
+	let mut corpus = charger( chemin )?; 
 	let mut environnement = Environnement::creer();  
 	corpus.lemmes.reverse(); 
 	while let Some( lemme ) = corpus.lemmes.pop() { 
