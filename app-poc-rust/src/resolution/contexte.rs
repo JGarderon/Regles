@@ -9,19 +9,15 @@ use crate::communs::Types;
 pub struct Contexte<'env> { 
 	environnement: &'env Environnement, 
 	clauses: Vec<&'env Types>, 
-	regles: Vec<Vec<( 
-		String, 
-		Vec<&'env Types>, 
-		&'env Vec<Types>, 
-		&'env Vec<Types>, 
-		&'env Vec<Types> 
-	)>>, 
-	position_groupe: usize, 
-	position_indice: usize 
+	regles: Vec<( 
+		&'env String, 
+		Vec<&'env Types> 
+	)>, 
+	position: usize 
 } 
 
 pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte,&'static str> { 
-	let clauses = environnement.conditions.values().map( 
+	let mut clauses = environnement.conditions.values().map( 
 		|condition| { 
 			condition.iter().filter_map( 
 				|clause| match clause { 
@@ -33,42 +29,44 @@ pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte
 	).collect::<Vec<Vec<&Types>>>().into_iter().flat_map( 
 		|item| item 
 	).collect::<Vec<&Types>>(); 
-
-	if let Some( r ) = environnement.regles.get( "réduction" ) { 
-		// println!("r = {:?}", r);
-
-		let mut positions: Vec<Iter<Types>> = vec!(); 
-		let mut actuel =  r.1.iter();  
-		let mut retour: Vec<&Types> = vec!(); 
-		loop { 
-			while let Some( item ) = actuel.next() { 
-				match item { 
-					Types::Et | Types::Ou => retour.push( &item ), 
-					Types::Appelable( _, _, _ ) => retour.push( &item ), 
-					Types::Conditionnel( nom ) => match environnement.conditions.get( nom ) { 
-						Some( clauses ) => { 
-							let mut ancien = actuel.clone(); 
-							positions.push( ancien ); 
-							actuel = clauses.iter(); 
-							if positions.len() > 15 { 
-								return Err( "Profondeur de récursion maximale autorisée des clauses conditionnelles atteinte" ) 
+	clauses.sort_unstable_by(
+		// échouera si NaN pour les f64 
+		// https://doc.rust-lang.org/std/primitive.slice.html#method.sort_unstable_by 
+		|a, b| a.partial_cmp(b).unwrap() 
+	); 
+	clauses.dedup(); 
+	let mut regles: Vec<(&String,Vec<&'env Types>)> = vec!(); 
+	for (regle_cle, regle_valeur) in environnement.regles.iter() { 
+		let mut regle_clauses: Vec<&Types> = vec!(); 
+		{ 
+			let mut positions: Vec<Iter<Types>> = vec!(); 
+			let mut actuel =  regle_valeur.1.iter();  
+			loop { 
+				while let Some( item ) = actuel.next() { 
+					match item { 
+						Types::Et | Types::Ou => regle_clauses.push( &item ), 
+						Types::Appelable( _, _, _ ) => regle_clauses.push( &item ), 
+						Types::Conditionnel( nom ) => match environnement.conditions.get( nom ) { 
+							Some( clauses ) => { 
+								let mut ancien = actuel.clone(); 
+								positions.push( ancien ); 
+								actuel = clauses.iter(); 
+								if positions.len() > 15 { 
+									return Err( "Profondeur de récursion maximale autorisée des clauses conditionnelles atteinte" ) 
+								} 
 							} 
+							None => return Err( "Demande de condition inconnue" ) 
 						} 
-						None => return Err( "Demande de condition inconnue" ) 
+						_ => () 
 					} 
-					_ => () 
+				} 
+				match positions.pop() { 
+					Some( position ) => actuel = position, 
+					None => break 
 				} 
 			} 
-			match positions.pop() { 
-				Some( position ) => actuel = position, 
-				None => break 
-			} 
 		} 
-
-		println!("r = {:?}", retour); 
-
-		let mut erreur: bool = false; 
-		let retour2 = retour.iter().map( 
+		let regle_clauses = regle_clauses.iter().map( 
 			|clause_avant| match clause_avant { 
 				Types::Appelable( _, _, _ ) => {
 					for clause in clauses.iter() { 
@@ -76,29 +74,22 @@ pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte
 							return *clause; 
 						} 
 					} 
-					erreur = true; 
 					*clause_avant 
 				}
 				_ => clause_avant 
 			}
 		).collect::<Vec<&Types>>(); 
-
-		println!("erreur = {:?}", erreur); 
-
-		println!("r2 = {:?}", retour2); 
-
-
+		regles.push( (
+			&regle_cle, 
+			regle_clauses 
+		) ); 
 	} 
-	println!("!");
-
-
 	Ok( 
 		Contexte { 
 			environnement: environnement, 
 			clauses: clauses, 
-			regles: vec!(), 
-			position_groupe: 0, 
-			position_indice: 0 
+			regles: regles, 
+			position: 0 
 		} 
 	) 
 } 

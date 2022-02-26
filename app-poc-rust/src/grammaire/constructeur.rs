@@ -1,4 +1,8 @@
 
+// à ajouter : .is_nan() 
+// https://doc.rust-lang.org/std/primitive.f64.html#method.is_nan 
+
+
 use crate::grammaire::parseur::Lemmes; 
 use crate::grammaire::parseur::charger; 
 use core::slice::Iter;

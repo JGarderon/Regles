@@ -1,5 +1,5 @@
 
-#[derive(Debug,PartialEq)] 
+#[derive(Debug,PartialEq,PartialOrd)] 
 pub enum Types {
 	Nombre(f64), 
 	Texte(String), 
@@ -8,5 +8,6 @@ pub enum Types {
 	Et, 
 	Ou, 
 }
+
 
 

@@ -20,7 +20,7 @@ fn main() -> Result<(), &'static str> {
 	)?; 
 
 	println!( 
-		"--- intermédiaire : {:?} ---", 
+		"--- intermédiaire : {:#?} ---", 
 		contexte_resolution( &environnement)? 
 	); 
 	
