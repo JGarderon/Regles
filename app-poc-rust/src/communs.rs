@@ -3,8 +3,9 @@
 pub enum Types {
 	Nombre(f64), 
 	Texte(String), 
+	Variable(String), 
 	Conditionnel(String), 
-	Appelable(String, bool, Vec<Types>), 
+	Appelable(String, Option<bool>, Vec<Types>), 
 	Et, 
 	Ou, 
 }

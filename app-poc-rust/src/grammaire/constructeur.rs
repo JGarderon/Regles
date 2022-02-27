@@ -68,6 +68,7 @@ fn retrouver_appelable( iterable: &mut Vec<Lemmes> ) -> Result<Vec<Types>,&'stat
 		match iterable.pop() { 
 			Some( Lemmes::Appelable_Fin( _ ) ) => break, 
 			Some( Lemmes::Texte( _, texte ) ) => appelable.push( Types::Texte( String::from( &texte[1..texte.len()-1] ) ) ), 
+			Some( Lemmes::Variable( _, texte ) ) => appelable.push( Types::Variable( String::from( &texte[0..texte.len()] ) ) ), 
 			Some( Lemmes::Nombre( _, nbre_textuel ) ) => match &nbre_textuel.parse::<f64>() { 
 				Ok( nbre ) => appelable.push( Types::Nombre( *nbre ) ), 
 				Err( _ ) => return Err( "Corps de variable numéraire incorrect" ) 
@@ -120,7 +121,7 @@ fn definir_condition( iterable: &mut Vec<Lemmes>, environnement: &mut Environnem
 			Some( Lemmes::Ou( _ ) ) => clauses.push( Types::Ou ), 
 			Some( Lemmes::Variable( _, nom ) ) => clauses.push( Types::Appelable( 
 				nom, 
-				false,
+				None,
 				retrouver_appelable( iterable )? 
 			) ), 
 			None => return Err( "Une clause n'est pas terminée" ), 
@@ -182,7 +183,7 @@ fn definir_regle( iterable: &mut Vec<Lemmes>, environnement: &mut Environnement 
 					}, 
 					Some( Lemmes::Variable( _, nom ) ) => alors.push( Types::Appelable( 
 						nom, 
-						false, 
+						None, 
 						retrouver_appelable( iterable )? 
 					) ), 
 					None => return Err( "Clé 'Alors' non-terminée" ), 
@@ -199,7 +200,7 @@ fn definir_regle( iterable: &mut Vec<Lemmes>, environnement: &mut Environnement 
 					}, 
 					Some( Lemmes::Variable( _, nom ) ) => sinon.push( Types::Appelable( 
 						nom, 
-						false, 
+						None, 
 						retrouver_appelable( iterable )? 
 					) ), 
 					None => return Err( "Clé 'Sinon' non-terminée" ), 
@@ -216,7 +217,7 @@ fn definir_regle( iterable: &mut Vec<Lemmes>, environnement: &mut Environnement 
 					}, 
 					Some( Lemmes::Variable( _, nom ) ) => finalement.push( Types::Appelable( 
 						nom, 
-						false, 
+						None, 
 						retrouver_appelable( iterable )? 
 					) ), 
 					None => return Err( "Clé 'Finalement' non-terminée" ), 

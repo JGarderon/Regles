@@ -11,7 +11,7 @@ Condition "est membre":
 Condition "offre spéciale" : 
   ?"est membre"
   et 
-  client.total_historique( ">", 1000 ) 
+  client.total_historique( ceci_est_une_variable, ">", 1000 ) 
 
 Condition "date offre spéciale" : 
   date.aujourdhui( "<", "2022-02-16" ) 

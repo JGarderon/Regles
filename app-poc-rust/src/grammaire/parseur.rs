@@ -162,6 +162,10 @@ pub fn nonterminal_valeur( mut index: usize, corpus: &mut Corpus, _ajouter: bool
 	if index != origine { 
 		return Ok( index - origine ); 
 	} 
+	ajouter_lemme_terminal!( index, corpus, terminal_variable, Lemmes::Variable ); 
+	if index != origine { 
+		return Ok( index - origine ); 
+	} 
 	Ok( 0 ) 
 } 
 
