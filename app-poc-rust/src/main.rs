@@ -25,7 +25,7 @@ fn resoudre( contexte: &mut Contexte ) -> Result<Option<String>,&'static str> {
 			_ => () 
 		}
 	} 
-	println!( "{:?}", contexte.clauses); 
+	// println!( "{:?}", contexte.clauses); 
 	contexte.position += 1; 
 	return Ok( None ); 
 }
@@ -35,18 +35,7 @@ fn main() -> Result<(), &'static str> {
 
 	println!("--- début ---");
 
-	let environnement = environnement_construire( 
-		"regles.txt".to_string() 
-	)?; 
-
-	let mut contexte = contexte_resolution( &environnement)?; 
-
-	resoudre( &mut contexte ); 
-
-	println!( 
-		"--- intermédiaire : {:#?} ---", 
-		() // contexte 
-	); 
+	resolution_executer()?; 
 	
 	println!("--- fin ---");
 
