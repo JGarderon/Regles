@@ -2,7 +2,6 @@
 // à ajouter : .is_nan() 
 // https://doc.rust-lang.org/std/primitive.f64.html#method.is_nan 
 
-
 use crate::grammaire::parseur::Lemmes; 
 use crate::grammaire::parseur::charger; 
 use core::slice::Iter;
@@ -12,16 +11,19 @@ use std::collections::HashMap;
 use crate::communs::Types; 
 
 #[derive(Debug)]
+pub struct EnvironnementRegle { 
+	pub poids: f64, 
+	pub clauses: Vec<Types>, 
+	pub alors: Vec<Types>, 
+	pub sinon: Vec<Types>, 
+	pub finalement: Vec<Types> 
+}
+
+#[derive(Debug)]
 pub struct Environnement { 
 	pub variables: HashMap<String,Types>, 
 	pub conditions: HashMap<String,Vec<Types>>, 
-	pub regles: HashMap<String,( 
-		f64, 
-		Vec<Types>, 
-		Vec<Types>, 
-		Vec<Types>, 
-		Vec<Types> 
-	)> 
+	pub regles: HashMap<String,EnvironnementRegle> 
 } 
 
 impl Environnement { 
@@ -47,13 +49,13 @@ impl Environnement {
 	fn regler( &mut self, nom: String, poids: f64, si: Vec<Types>, alors: Vec<Types>, sinon: Vec<Types>, finalement: Vec<Types> ) { 
 		self.regles.insert( 
 			nom, 
-			(
-				poids, 
-				si, 
-				alors, 
-				sinon, 
-				finalement 
-			) 
+			EnvironnementRegle {
+				poids: poids, 
+				clauses: si, 
+				alors: alors, 
+				sinon: sinon, 
+				finalement: finalement 
+			} 
 		); 
 	} 
 } 
