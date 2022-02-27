@@ -8,16 +8,16 @@ use crate::communs::Types;
 
 #[derive(Debug)] 
 pub struct ContexteRegle<'env> { 
-	parent: &'env EnvironnementRegle, 
-	clauses: Vec<usize> 
+	pub parent: &'env EnvironnementRegle, 
+	pub clauses: Vec<usize> 
 }
 
 #[derive(Debug)] 
 pub struct Contexte<'env> { 
-	environnement: &'env Environnement, 
-	clauses: Vec<Types>, 
-	regles: Vec<ContexteRegle<'env>>, 
-	position: usize 
+	pub environnement: &'env Environnement, 
+	pub clauses: Vec<Types>, 
+	pub regles: Vec<ContexteRegle<'env>>, 
+	pub position: usize 
 } 
 
 pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte,&'static str> { 
@@ -36,7 +36,7 @@ pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte
 		|item| item 
 	).collect::<Vec<Types>>(); 
 	clauses.sort_unstable_by( 
-		// échouera si NaN pour les f64 
+		// échouera si NaN/inf pour les f64 
 		// https://doc.rust-lang.org/std/primitive.slice.html#method.sort_unstable_by 
 		|a, b| a.partial_cmp(b).unwrap() 
 	); 
@@ -103,10 +103,9 @@ pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte
 	contexte_regles.sort_unstable_by( 
 		|a, b| a.0.partial_cmp( &b.0 ).unwrap() 
 	); 
-	let contexte_regles = contexte_regles.into_iter().map( 
+	contexte.regles = contexte_regles.into_iter().map( 
 		|item| item.1 
 	).collect::<Vec<ContexteRegle>>(); 
-	contexte.regles = contexte_regles; 
 	Ok( 
 		contexte 
 	) 

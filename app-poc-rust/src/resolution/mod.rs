@@ -6,6 +6,9 @@ pub mod contexte;
 pub mod traitement; 
 use crate::resolution::traitement::executer as resolution_traitement_executer; 
 
+pub mod asservi; 
+use crate::resolution::asservi::executer as resolution_asservi_executer; 
+
 static ENV_RESOLUTION: &'static str = "RESOLUTION_TYPE"; 
 
 pub fn executer() { 
@@ -13,6 +16,7 @@ pub fn executer() {
 	match env::var( ENV_RESOLUTION ) {
 		Ok( resolution ) => match &resolution[..] { 
 			"traitement" => resolution_traitement_executer(), 
+			"supervise" => resolution_asservi_executer(), 
 			indetermine => panic!( 
 				"La résolution {:?} n'est pas supportée", 
 				indetermine 
