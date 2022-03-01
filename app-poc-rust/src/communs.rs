@@ -10,7 +10,13 @@ pub enum Types {
 	Appelable(String, Option<bool>, Vec<Types>), 
 	Et, 
 	Ou, 
-}
+} 
+
+pub enum ActionResolution { 
+	Continuer, 
+	Arreter, 
+	Erreur(&'static str) 
+} 
 
 pub struct Dialogue { 
 	tampon: String 
