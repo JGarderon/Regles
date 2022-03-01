@@ -18,7 +18,7 @@ fn resoudre( contexte: &mut Contexte, dialogue: &mut Dialogue ) -> Result<Option
 				dialogue.soumettre( &fct, &args )? 
 			), 
 			_ => () 
-		}
+		} 
 	} 
 	contexte.position += 1; 
 	return Ok( None ); 
@@ -27,15 +27,24 @@ fn resoudre( contexte: &mut Contexte, dialogue: &mut Dialogue ) -> Result<Option
 pub fn executer( environnement: &Environnement ) -> Result<(), &'static str> { 
 	let mut contexte = contexte_resolution( &environnement)?; 
 	let mut dialogue: Dialogue = Dialogue::creer();  
-	loop { 
-		match resoudre( &mut contexte, &mut dialogue ) { 
-			Ok( etat ) => match etat { 
-				Some( message ) => println!("message = {:?}", message), // à terminer 
-				None => break 
-			} 
-			Err( erreur ) => return Err( erreur ) 
+	loop {
+		match dialogue.parler( "initier".as_bytes() )?.trim_end() { 
+			"o" => (), 
+			"a" => break, 
+			"n" => return Err( "Le processus distant n'est pas prêt à exécuter les consignes du moteur de règles" ), 
+			_ => return Err( "Le processus distant a répondu hors des valeurs autorisées au moment de l'initialisation" ) 
 		} 
-	} 
+		contexte.raz(); 
+		loop { 
+			match resoudre( &mut contexte, &mut dialogue ) { 
+				Ok( etat ) => match etat { 
+					Some( message ) => println!("message = {:?}", message), // à terminer 
+					None => break 
+				} 
+				Err( erreur ) => return Err( erreur ) 
+			} 
+		} 
+	}
 	Ok( () ) 
 } 
 

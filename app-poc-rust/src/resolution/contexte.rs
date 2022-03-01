@@ -20,6 +20,17 @@ pub struct Contexte<'env> {
 	pub position: usize 
 } 
 
+impl<'env> Contexte<'env> { 
+	pub fn raz( &mut self ) { 
+		for clause in self.clauses.iter_mut() { 
+			match clause { 
+				Types::Appelable( _, etat, _ ) if *etat != None => *etat = None, 
+				_ => () 
+			} 
+		} 
+	} 
+} 
+
 pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte,&'static str> { 
 	let mut clauses = environnement.conditions.values().map( 
 		|condition| { 
