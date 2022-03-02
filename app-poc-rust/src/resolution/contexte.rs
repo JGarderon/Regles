@@ -28,6 +28,7 @@ impl<'env> Contexte<'env> {
 				_ => () 
 			} 
 		} 
+		self.position = 0; 
 	} 
 } 
 
@@ -45,13 +46,16 @@ pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte
 		} 
 	).collect::<Vec<Vec<Types>>>().into_iter().flat_map( 
 		|item| item 
-	).collect::<Vec<Types>>(); 
+	).collect::<Vec<Types>>(); // flatten ?
 	clauses.sort_unstable_by( 
 		// échouera si NaN/inf pour les f64 
 		// https://doc.rust-lang.org/std/primitive.slice.html#method.sort_unstable_by 
 		|a, b| a.partial_cmp(b).unwrap() 
 	); 
 	clauses.dedup(); 
+	clauses.push( Types::Fermeture ); 
+	clauses.push( Types::Ouverture ); 
+	clauses.reverse(); 
 	let mut contexte = Contexte { 
 		environnement: environnement, 
 		clauses: clauses, 
@@ -63,6 +67,7 @@ pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte
 		let mut contexteregle_clauses: Vec<usize> = vec!(); 
 		let mut positions: Vec<Iter<Types>> = vec!(); 
 		let mut actuel =  regle_valeur.clauses.iter(); 
+		contexteregle_clauses.push( 0 ); 
 		loop { 
 			while let Some( actuel_item ) = actuel.next() { 
 				match actuel_item { 
@@ -84,6 +89,7 @@ pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte
 					} 
 					Types::Conditionnel( nom ) => match environnement.conditions.get( nom ) { 
 						Some( conditionnel_clauses ) => { 
+							contexteregle_clauses.push( 0 ); 
 							let mut ancien = actuel.clone(); 
 							positions.push( ancien ); 
 							actuel = conditionnel_clauses.iter(); 
@@ -96,11 +102,18 @@ pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte
 					_ => () 
 				} 
 			} 
+			contexteregle_clauses.push( 1 ); 
 			match positions.pop() { 
 				Some( position ) => actuel = position, 
 				None => break 
 			} 
 		} 
+		// println!("{:#?}", contexteregle_clauses.iter().map( 
+		// 	|index| match contexte.clauses.iter().nth( *index ) { 
+		// 		Some( t ) => t.clone(), 
+		// 		None => panic!("fdsfsd") 
+		// 	} 
+		// ).collect::<Vec<Types>>()); 
 		contexte_regles.push( 
 			( 
 				regle_valeur.poids, 

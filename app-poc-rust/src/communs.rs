@@ -8,6 +8,8 @@ pub enum Types {
 	Variable(String), 
 	Conditionnel(String), 
 	Appelable(String, Option<bool>, Vec<Types>), 
+	Ouverture, 
+	Fermeture, 
 	Et, 
 	Ou, 
 } 
@@ -28,8 +30,8 @@ impl Dialogue {
 			tampon: String::new() 
 		} 
 	} 
-	pub fn parler( &mut self, message: &[u8] ) -> std::result::Result<String, &'static str> { 
-		io::stdout().write_all( message ); 
+	pub fn parler( &mut self, message: &str ) -> std::result::Result<String, &'static str> { 
+		io::stdout().write_all( format!( "{}\n", message ).as_bytes() ); 
 		io::stdout().flush(); 
 		match io::stdin().read_line( &mut self.tampon ) {
 			Ok( taille ) => match taille { 
@@ -45,23 +47,25 @@ impl Dialogue {
 	} 
 	pub fn soumettre( &mut self, fct: &String, args: &Vec<Types> ) -> Result<bool, &'static str> { 
 		io::stdout().write_all( 
-			args.iter().fold( 
-				fct.clone(), 
-				|acc, item| { 
-					format!( 
-						"{} {}", 
-						acc, 
-						match item { 
-							Types::Nombre( n ) => n.to_string(), 
-							Types::Texte( t ) => format!( "\"{}\"", t.to_string() ), 
-							Types::Variable( v ) => format!( "${}", v.to_string() ), 
-							_ => format!( 
-								"$(erreur: l'item '{:?}' n'est pas au bon format)", 
-								item 
-							) 
-						} 
-					) 
-				} 
+			format!( "{}\n", 
+				args.iter().fold( 
+					fct.clone(), 
+					|acc, item| { 
+						format!( 
+							"{} {}", 
+							acc, 
+							match item { 
+								Types::Nombre( n ) => n.to_string(), 
+								Types::Texte( t ) => format!( "\"{}\"", t.to_string() ), 
+								Types::Variable( v ) => format!( "${}", v.to_string() ), 
+								_ => format!( 
+									"$(erreur: l'item '{:?}' n'est pas au bon format)", 
+									item 
+								) 
+							} 
+						) 
+					} 
+				) 
 			).as_bytes() 
 		); 
 		io::stdout().flush(); 
