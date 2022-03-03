@@ -83,7 +83,7 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 			false 
 		} 
 	}; 
-	if fin { 
+	let fin = if fin { 
 		for etape in contexte.regles[contexte.position].parent.finalement.iter() { 
 			match etape { 
 				Types::Appelable( fct, _, args ) => { 
@@ -92,6 +92,12 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 				_ => return Err( "Type invalide lors de l'application de la règle (partie 'Finalement')" ) 
 			} 
 		} 
+		true 
+	} else { 
+		false 
+	}; 
+	if fin { 
+		contexte.raz( None ); 
 	} 
 	contexte.position += 1; 
 	Ok( () )
@@ -107,7 +113,7 @@ pub fn executer( environnement: &Environnement ) -> Result<(), &'static str> {
 			"n" => return Err( "Le processus distant n'est pas prêt à exécuter les consignes du moteur de règles" ), 
 			_ => return Err( "Le processus distant a répondu hors des valeurs autorisées au moment de l'initialisation" ) 
 		} 
-		contexte.raz(); 
+		contexte.raz( Some( 0 ) ); 
 		loop { 
 			match resoudre( &mut contexte, &mut dialogue ) { 
 				ActionResolution::Continuer => { 

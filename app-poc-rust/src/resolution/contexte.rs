@@ -21,14 +21,16 @@ pub struct Contexte<'env> {
 } 
 
 impl<'env> Contexte<'env> { 
-	pub fn raz( &mut self ) { 
+	pub fn raz( &mut self, position: Option<usize> ) { 
 		for clause in self.clauses.iter_mut() { 
 			match clause { 
 				Types::Appelable( _, etat, _ ) if *etat != None => *etat = None, 
 				_ => () 
 			} 
 		} 
-		self.position = 0; 
+		if let Some( p ) = position { 
+			self.position = p; 
+		} 
 	} 
 } 
 
