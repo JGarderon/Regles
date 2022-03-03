@@ -3,6 +3,7 @@
 import subprocess 
 import random 
 import asyncio 
+import shlex 
 
 ### ----------------------------------------------
 
@@ -60,7 +61,7 @@ class ExecuteurSimulation:
 		return etat 
 
 	async def faire( self, ligne ): 
-		print( "exécuteur - faire", id(self), ligne ) 
+		print( "exécuteur - faire", id(self), shlex.split( ligne ) ) 
 		await asyncio.sleep( random.randint( 1, 3 ) ) 
 		return "v\n" if random.randint( 1, 2 )%2 == 0 else "f\n" 
 
