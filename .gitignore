@@ -1,1 +1,2 @@
 app-poc-rust/target
+app-poc-rust/Cargo.lock

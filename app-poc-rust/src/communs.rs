@@ -1,5 +1,6 @@
 
 use std::io::{self, Write}; 
+use crate::grammaire::constructeur::Environnement; 
 
 #[derive(Debug,PartialEq,PartialOrd,Clone)] 
 pub enum Types {
@@ -90,6 +91,28 @@ impl Dialogue {
 			} 
 			Err( _ ) => Err( "Impossible de lire l'entrée du processus pour récupérer le retour" ) 
 		} 
+	} 
+	pub fn initier( &mut self, environnement: &Environnement ) -> Result<bool,&'static str> { 
+		match self.parler( "initier" )?.trim_end() { 
+			"o" => (), 
+			"a" => return Ok( false ), 
+			"n" => return Err( "Le processus distant n'est pas prêt à exécuter les consignes du moteur de règles" ), 
+			_ => return Err( "Le processus distant a répondu hors des valeurs autorisées au moment de l'initialisation générale" ) 
+		} 
+		for (_, variable) in environnement.variables.iter() { 
+			let message = match variable { 
+				Types::Nombre( n ) => n.to_string(), 
+				Types::Texte( t ) => format!( "\"{}\"", t.to_string() ), 
+				Types::Variable( v ) => format!( "${}", v.to_string() ), 
+				_ => return Err( "Définition de variable invalide lors de l'initialisation du contexte inter-processus" ) 
+			}; 
+			match self.parler( &format!( "definir {}", message )[..] )?.trim_end() { 
+				"o" => (), 
+				"n" => return Err( "Une initialisation de variable a été rejetée par le processus distant" ), 
+				_ => return Err( "Le processus distant a répondu hors des valeurs autorisées au moment de l'initialisation d'une variable" ) 
+			} 
+		} 
+		Ok( true ) 
 	} 
 } 
 

@@ -4,12 +4,14 @@ import subprocess
 import random 
 import asyncio 
 import shlex 
+import re 
 
 ### ----------------------------------------------
 
 class Moteur: 
 
 	processus = None 
+	regex_definir = re.compile( "definir\s+[^\n]+" ) 
 	
 	def __init__( self, executeur ): 
 		self.processus = subprocess.Popen( 
@@ -35,6 +37,10 @@ class Moteur:
 			) 
 			self.processus.stdin.flush() 
 			return suite 
+		elif self.regex_definir.match( ligne ) is not None: 
+			self.processus.stdin.write( 
+				await self.executeur.definir( ligne ) 
+			) 
 		else: 
 			self.processus.stdin.write( 
 				await self.executeur.faire( ligne ) 
@@ -59,6 +65,11 @@ class ExecuteurSimulation:
 		self.nbre += 1 
 		await asyncio.sleep( 1 ) 
 		return etat 
+
+	async def definir( self, ligne ): 
+		print( "exécuteur - définir", id(self), shlex.split( ligne ) ) 
+		await asyncio.sleep( random.randint( 1, 1 ) ) 
+		return "o\n" 
 
 	async def faire( self, ligne ): 
 		print( "exécuteur - faire", id(self), shlex.split( ligne ) ) 

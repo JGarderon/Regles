@@ -107,11 +107,8 @@ pub fn executer( environnement: &Environnement ) -> Result<(), &'static str> {
 	let mut contexte = contexte_resolution( &environnement)?; 
 	let mut dialogue: Dialogue = Dialogue::creer(); 
 	loop {
-		match dialogue.parler( "initier" )?.trim_end() { 
-			"o" => (), 
-			"a" => break, 
-			"n" => return Err( "Le processus distant n'est pas prêt à exécuter les consignes du moteur de règles" ), 
-			_ => return Err( "Le processus distant a répondu hors des valeurs autorisées au moment de l'initialisation" ) 
+		if !dialogue.initier( environnement )? { 
+			break; 
 		} 
 		contexte.raz( Some( 0 ) ); 
 		loop { 
