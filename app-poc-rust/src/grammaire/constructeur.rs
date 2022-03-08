@@ -188,6 +188,7 @@ fn definir_regle( iterable: &mut Vec<Lemmes>, environnement: &mut Environnement 
 						None, 
 						retrouver_appelable( iterable )? 
 					) ), 
+					Some( Lemmes::Suite( _ ) ) => (), 
 					None => return Err( "Clé 'Alors' non-terminée" ), 
 					_ => return Err( "Clé 'Alors' dotée d'une valeur invalide" ), 
 				} 
@@ -228,7 +229,7 @@ fn definir_regle( iterable: &mut Vec<Lemmes>, environnement: &mut Environnement 
 			}, 
 			Some( Lemmes::Regle_Fin( _ ) ) => break, 
 			e @ _ => { 
-				println!( "{:?}", e ); 
+				// println!( "{:?}", e ); 
 				return Err( "Un début de clé incorrect a été trouvé" ); 
 			} 
 		} 

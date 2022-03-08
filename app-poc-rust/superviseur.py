@@ -8,6 +8,12 @@ import re
 
 ### ----------------------------------------------
 
+NBRE_PROCESSUS_MAX = 1 
+NBRE_ESSAIS_MAX = 1 
+TEMPS_SIMULATION_MAX = 1 
+
+### ----------------------------------------------
+
 class Moteur: 
 
 	processus = None 
@@ -57,23 +63,27 @@ class ExecuteurSimulation:
 	etat = True 
 
 	def __init__( self ): 
-		self.maxi = random.randint( 1, 5 ) 
+		global NBRE_ESSAIS_MAX 
+		self.maxi = random.randint( 1, NBRE_ESSAIS_MAX ) 
 
 	async def initier( self ): 
+		global TEMPS_SIMULATION_MAX 
 		print( "exécuteur - initier", id(self), self.nbre, self.maxi ) 
 		etat = False if self.maxi <= self.nbre else True 
 		self.nbre += 1 
-		await asyncio.sleep( 1 ) 
+		await asyncio.sleep( random.randint( 0, TEMPS_SIMULATION_MAX ) ) 
 		return etat 
 
 	async def definir( self, ligne ): 
-		print( "exécuteur - définir", id(self), shlex.split( ligne ) ) 
-		await asyncio.sleep( random.randint( 1, 1 ) ) 
+		global TEMPS_SIMULATION_MAX 
+		print( "exécuteur - définir", id(self), ligne ) # shlex.split( ligne ) ) 
+		await asyncio.sleep( random.randint( 0, TEMPS_SIMULATION_MAX ) ) 
 		return "o\n" 
 
 	async def faire( self, ligne ): 
-		print( "exécuteur - faire", id(self), shlex.split( ligne ) ) 
-		await asyncio.sleep( random.randint( 1, 3 ) ) 
+		global TEMPS_SIMULATION_MAX 
+		print( "exécuteur - faire", id(self), ligne ) # shlex.split( ligne ) ) 
+		await asyncio.sleep( random.randint( 0, TEMPS_SIMULATION_MAX) ) 
 		return "v\n" if random.randint( 1, 2 )%2 == 0 else "f\n" 
 
 ### ----------------------------------------------
@@ -84,40 +94,10 @@ async def main( *moteurs ):
 if __name__ == "__main__": 
 	asyncio.run( 
 		main( 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
-			Moteur( ExecuteurSimulation() ).lancer(), 
+			*list( ( 
+				Moteur( ExecuteurSimulation() ).lancer() for i in range( 0, NBRE_PROCESSUS_MAX ) 
+			) ) 
 		) 
 	)  
-	# iterables = list( map( lambda m: iter( m ), moteurs ) ) 
-	# print( iterables[0] ) 
-	# for iterable in iterables: 
-	# 	iterable.next() 
 
 
