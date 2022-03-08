@@ -17,36 +17,35 @@ macro_rules! nonterminal_regle_partie {
 	($index:ident,$corpus:ident,$cle:expr,$taille:expr,$obligatoire:expr,$lemme_depart:path,$lemme_fin:path) => {
 		espaces!( $index, $corpus ); 
 		if terminal_cle!( $index, $corpus, $cle ) == 0 { 
-			if $obligatoire {
-				return Ok( 0 ); 
-			} else { 
+			if $obligatoire == true {
 				return Err( "Une clé est obligatoire" ); 
 			} 
-		} 
-		ajouter_lemme_grammatical!( $index, $corpus, $lemme_depart ); 
-		$index += $taille; 
-		match nonterminal_appelable( $index, $corpus, true ) { 
-			Ok( 0 ) => return Err( "Aucune clause appelable après une clé" ), 
-			Ok( taille ) => $index += taille, 
-			Err( erreur ) => return Err( erreur ) 
-		} 
-		loop { 
-			espaces!( $index, $corpus ); 
-			match terminal_cle( $index, ",", $corpus ) { 
-				Ok( 0 ) | Err( _ ) => break, 
-				Ok( taille ) => { 
-					ajouter_lemme_grammatical!( $index, $corpus, Lemmes::Suite ); 
-					$index += 1; 
-				} 
-			} 
-			espaces!( $index, $corpus ); 
+		} else {
+			ajouter_lemme_grammatical!( $index, $corpus, $lemme_depart ); 
+			$index += $taille; 
 			match nonterminal_appelable( $index, $corpus, true ) { 
-				Ok( 0 ) => return Err( "Aucune clause appelable dans une clé après un opérateur logique" ), 
+				Ok( 0 ) => return Err( "Aucune clause appelable après une clé" ), 
 				Ok( taille ) => $index += taille, 
 				Err( erreur ) => return Err( erreur ) 
 			} 
-		} 
-		ajouter_lemme_grammatical!( $index, $corpus, $lemme_fin ); 
+			loop { 
+				espaces!( $index, $corpus ); 
+				match terminal_cle( $index, ",", $corpus ) { 
+					Ok( 0 ) | Err( _ ) => break, 
+					Ok( taille ) => { 
+						ajouter_lemme_grammatical!( $index, $corpus, Lemmes::Suite ); 
+						$index += 1; 
+					} 
+				} 
+				espaces!( $index, $corpus ); 
+				match nonterminal_appelable( $index, $corpus, true ) { 
+					Ok( 0 ) => return Err( "Aucune clause appelable dans une clé après un opérateur logique" ), 
+					Ok( taille ) => $index += taille, 
+					Err( erreur ) => return Err( erreur ) 
+				} 
+			} 
+			ajouter_lemme_grammatical!( $index, $corpus, $lemme_fin ); 
+		}
 	}
 }
 

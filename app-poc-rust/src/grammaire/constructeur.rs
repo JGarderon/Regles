@@ -12,6 +12,7 @@ use crate::communs::Types;
 
 #[derive(Debug)]
 pub struct EnvironnementRegle { 
+	pub nom: String, 
 	pub poids: f64, 
 	pub clauses: Vec<Types>, 
 	pub alors: Vec<Types>, 
@@ -48,8 +49,9 @@ impl Environnement {
 	} 
 	fn regler( &mut self, nom: String, poids: f64, si: Vec<Types>, alors: Vec<Types>, sinon: Vec<Types>, finalement: Vec<Types> ) { 
 		self.regles.insert( 
-			nom, 
-			EnvironnementRegle {
+			nom.clone(), 
+			EnvironnementRegle { 
+				nom: nom, // à faire : passer par un référence non-mutable 
 				poids: poids, 
 				clauses: si, 
 				alors: alors, 

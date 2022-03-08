@@ -360,7 +360,7 @@ pub fn nonterminal_regle( mut index: usize, corpus: &mut Corpus, ajouter: bool )
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Si_Depart ); 
 	index += nonterminal_regle_partie_si( index, corpus, true )?; 
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Si_Fin ); 
-	nonterminal_regle_partie!( index, corpus, "Alors", 5, true, Lemmes::Alors_Depart, Lemmes::Alors_Fin ); 
+	nonterminal_regle_partie!( index, corpus, "Alors", 5, false, Lemmes::Alors_Depart, Lemmes::Alors_Fin ); 
 	nonterminal_regle_partie!( index, corpus, "Sinon", 5, false, Lemmes::Sinon_Depart, Lemmes::Sinon_Fin ); 
 	nonterminal_regle_partie!( index, corpus, "Finalement", 10, false, Lemmes::Finalement_Depart, Lemmes::Finalement_Fin ); 
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Regle_Fin ); 

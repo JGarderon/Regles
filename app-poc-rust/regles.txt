@@ -19,11 +19,17 @@ Condition "date offre spéciale" :
 Condition "réduction maximale" : 
   panier.total_reduction_verifier( "<", 25, "%" ) 
 
+Règle "réduction applicable" (0) : 
+  Si 
+    ?"réduction maximale" 
+  Sinon 
+    quefaire()  
+
 Règle "réduction" (90) : 
   Si 
     ?"offre spéciale" et ?"date offre spéciale" 
   Alors 
-    panier.reduction( 10.5, "%" ) , 
+    panier.reduction( 10.5, "%" ), 
     panier.notification( message_bonjour, "bravo, vous êtes un client fidèle" ) 
   Sinon 
     panier.reduction( -5, "%" ) 

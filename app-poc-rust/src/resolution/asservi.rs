@@ -106,6 +106,7 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 pub fn executer( environnement: &Environnement ) -> Result<(), &'static str> { 
 	let mut contexte = contexte_resolution( &environnement)?; 
 	let mut dialogue: Dialogue = Dialogue::creer(); 
+	// println!("{:#?}", contexte);
 	loop {
 		if !dialogue.initier( environnement )? { 
 			break; 
