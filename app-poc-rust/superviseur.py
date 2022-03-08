@@ -10,7 +10,7 @@ import re
 
 NBRE_PROCESSUS_MAX = 1 
 NBRE_ESSAIS_MAX = 1 
-TEMPS_SIMULATION_MAX = 1 
+TEMPS_SIMULATION_MAX = 0 
 
 ### ----------------------------------------------
 
@@ -68,7 +68,7 @@ class ExecuteurSimulation:
 
 	async def initier( self ): 
 		global TEMPS_SIMULATION_MAX 
-		print( "exécuteur - initier", id(self), self.nbre, self.maxi ) 
+		print( id(self), "exécuteur - initier", "!", self.nbre, "sur", self.maxi, "essai(s)" ) 
 		etat = False if self.maxi <= self.nbre else True 
 		self.nbre += 1 
 		await asyncio.sleep( random.randint( 0, TEMPS_SIMULATION_MAX ) ) 
@@ -76,15 +76,15 @@ class ExecuteurSimulation:
 
 	async def definir( self, ligne ): 
 		global TEMPS_SIMULATION_MAX 
-		print( "exécuteur - définir", id(self), ligne ) # shlex.split( ligne ) ) 
+		print( id(self), "exécuteur - définir", ligne ) # shlex.split( ligne ) ) 
 		await asyncio.sleep( random.randint( 0, TEMPS_SIMULATION_MAX ) ) 
 		return "o\n" 
 
 	async def faire( self, ligne ): 
 		global TEMPS_SIMULATION_MAX 
-		print( "exécuteur - faire", id(self), ligne ) # shlex.split( ligne ) ) 
+		print( id(self), "exécuteur - faire", ligne ) # shlex.split( ligne ) ) 
 		await asyncio.sleep( random.randint( 0, TEMPS_SIMULATION_MAX) ) 
-		return "v\n" if random.randint( 1, 2 )%2 == 0 else "f\n" 
+		return "f\n" if random.randint( 1, 5 ) == 5 else "v\n" 
 
 ### ----------------------------------------------
 
