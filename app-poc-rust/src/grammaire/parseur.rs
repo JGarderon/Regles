@@ -29,6 +29,7 @@ pub enum Lemmes {
 	Appelable_Depart(usize), 
 	Appelable_Fin(usize), 
 	Conditionnel(usize, String), 
+	Renvoi(usize, String), 
 	// logique 
 	Suite(usize), 
 	Et(usize), 
@@ -146,7 +147,21 @@ pub fn nonterminal_conditionnel( mut index: usize, corpus: &mut Corpus, _ajouter
 		corpus, 
 		terminal_texte, 
 		Lemmes::Conditionnel, 
-		Err( "Un nom de condition appelable est obligatoire" ) 
+		Err( "Un nom de condition appelable est obligatoire pour définir un conditionnel" ) 
+	); 
+	Ok( index - origine ) 
+} 
+
+pub fn nonterminal_renvoi( mut index: usize, corpus: &mut Corpus, _ajouter: bool ) -> RetourTerminaux { 
+	let origine = index.clone(); 
+	espaces!( index, corpus ); 
+	terminal_cle!( index, corpus, "!", false ); 
+	ajouter_lemme_terminal!( 
+		index, 
+		corpus, 
+		terminal_texte, 
+		Lemmes::Renvoi, 
+		Err( "Un nom de règle est obligatoire pour définir un renvoi" ) 
 	); 
 	Ok( index - origine ) 
 } 
@@ -197,7 +212,7 @@ pub fn nonterminal_variable( mut index: usize, corpus: &mut Corpus, ajouter: boo
 
 pub fn nonterminal_appelable( mut index: usize, corpus: &mut Corpus, ajouter: bool ) -> RetourTerminaux { 
 	let origine = index.clone(); 
-	espaces!( index, corpus );  
+	espaces!( index, corpus ); 
 	ajouter_lemme_terminal!( 
 		index, 
 		corpus, 
@@ -383,18 +398,21 @@ pub fn charger( chemin: String ) -> Result<Corpus, &'static str> {
 		stop = true; 
 		let taille = nonterminal_variable( index, &mut corpus, true )?; 
 		if taille > 0 { 
+			// eprintln!( "Définition 'Variable' trouvée ({})", index ); 
 			stop = false; 
 			index += taille; 
 			continue; 
 		} 
 		let taille = nonterminal_condition( index, &mut corpus, true )?; 
 		if taille > 0 { 
+			// eprintln!( "Définition 'Condition' trouvée ({})", index ); 
 			stop = false; 
 			index += taille; 
 			continue; 
 		} 
 		let taille = nonterminal_regle( index, &mut corpus, true )?; 
 		if taille > 0 { 
+			// eprintln!( "Définition 'Règle' trouvée ({})", index ); 
 			stop = false; 
 			index += taille; 
 			continue; 

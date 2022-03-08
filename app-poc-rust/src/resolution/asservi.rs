@@ -50,34 +50,51 @@ fn determiner( contexte: &Contexte ) -> Result<bool, &'static str> {
 			_ => () 
 		} 
 	} 
+	// eprintln!( "position = {:#?} ; état = {:#?}", contexte.position, etats ); 
 	Ok( etats.pop().unwrap() ) 
 } 
 
 fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> Result<(), &'static str> { 
-	let fin = if etat { 
+	let mut avancement = true; 
+	let fin = if etat == true { 
+		// eprintln!( "position : {:?}", contexte.position ); 
+		let mut i = 0; 
 		for etape in contexte.regles[contexte.position].parent.alors.iter() { 
 			match etape { 
 				Types::Appelable( fct, _, args ) => { 
 					dialogue.soumettre( &fct, &args )?; 
+					i += 1; 
+				}, 
+				Types::Renvoi( nom_regle ) => { 
+					eprintln!( "alors - reposition : {:?}", nom_regle ); 
+					contexte.repositionner( &nom_regle )?; 
+					avancement = false; 
 				}, 
 				_ => return Err( "Type invalide lors de l'application de la règle (partie 'Alors')" ) 
 			} 
 		} 
-		if contexte.regles[contexte.position].parent.alors.len() > 0 { 
+		if i > 0 { 
 			true 
 		} else { 
 			false 
 		} 
 	} else { 
+		let mut i = 0; 
 		for etape in contexte.regles[contexte.position].parent.sinon.iter() { 
 			match etape { 
 				Types::Appelable( fct, _, args ) => { 
 					dialogue.soumettre( &fct, &args )?; 
+					i += 1; 
+				}, 
+				Types::Renvoi( nom_regle ) => { 
+					eprintln!( "sinon - reposition : {:?}", nom_regle ); 
+					contexte.repositionner( &nom_regle )?; 
+					avancement = false; 
 				}, 
 				_ => return Err( "Type invalide lors de l'application de la règle (partie 'Sinon')" ) 
 			} 
 		} 
-		if contexte.regles[contexte.position].parent.sinon.len() > 0 { 
+		if i > 0 { 
 			true 
 		} else { 
 			false 
@@ -89,6 +106,11 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 				Types::Appelable( fct, _, args ) => { 
 					dialogue.soumettre( &fct, &args )?; 
 				}, 
+				Types::Renvoi( nom_regle ) => { 
+					eprintln!( "finalement - reposition : {:?}", nom_regle ); 
+					contexte.repositionner( &nom_regle )?; 
+					avancement = false; 
+				}, 
 				_ => return Err( "Type invalide lors de l'application de la règle (partie 'Finalement')" ) 
 			} 
 		} 
@@ -96,17 +118,19 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 	} else { 
 		false 
 	}; 
-	if fin { 
+	if fin == true { 
 		contexte.raz( None ); 
 	} 
-	contexte.position += 1; 
+	if avancement == true { 
+		contexte.position += 1; 
+	} 
 	Ok( () )
 }
 
 pub fn executer( environnement: &Environnement ) -> Result<(), &'static str> { 
 	let mut contexte = contexte_resolution( &environnement)?; 
 	let mut dialogue: Dialogue = Dialogue::creer(); 
-	// println!("{:#?}", contexte);
+	println!("contexte = {:#?}", contexte.regles);
 	loop {
 		if !dialogue.initier( environnement )? { 
 			break; 

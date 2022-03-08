@@ -23,8 +23,12 @@ macro_rules! nonterminal_regle_partie {
 		} else {
 			ajouter_lemme_grammatical!( $index, $corpus, $lemme_depart ); 
 			$index += $taille; 
-			match nonterminal_appelable( $index, $corpus, true ) { 
-				Ok( 0 ) => return Err( "Aucune clause appelable après une clé" ), 
+			match nonterminal_renvoi( $index, $corpus, true ) { 
+				Ok( 0 ) => match nonterminal_appelable( $index, $corpus, false ) { 
+					Ok( 0 ) => return Err( "Aucune clause appelable après une clé" ), 
+					Ok( taille ) => $index += taille, 
+					Err( erreur ) => return Err( erreur ) 
+				}, 
 				Ok( taille ) => $index += taille, 
 				Err( erreur ) => return Err( erreur ) 
 			} 
@@ -38,11 +42,16 @@ macro_rules! nonterminal_regle_partie {
 					} 
 				} 
 				espaces!( $index, $corpus ); 
-				match nonterminal_appelable( $index, $corpus, true ) { 
-					Ok( 0 ) => return Err( "Aucune clause appelable dans une clé après un opérateur logique" ), 
+				match nonterminal_renvoi( $index, $corpus, true ) { 
+					Ok( 0 ) => match nonterminal_appelable( $index, $corpus, false ) { 
+						Ok( 0 ) => return Err( "Aucune clause appelable après un séparateur" ), 
+						Ok( taille ) => $index += taille, 
+						Err( erreur ) => return Err( erreur ) 
+					}, 
 					Ok( taille ) => $index += taille, 
 					Err( erreur ) => return Err( erreur ) 
-				} 
+				}
+				
 			} 
 			ajouter_lemme_grammatical!( $index, $corpus, $lemme_fin ); 
 		}

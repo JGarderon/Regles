@@ -191,6 +191,7 @@ fn definir_regle( iterable: &mut Vec<Lemmes>, environnement: &mut Environnement 
 						retrouver_appelable( iterable )? 
 					) ), 
 					Some( Lemmes::Suite( _ ) ) => (), 
+					Some( Lemmes::Renvoi( _, nom ) ) => alors.push( Types::Renvoi( String::from( &nom[1..nom.len()-1] ) ) ), 
 					None => return Err( "Clé 'Alors' non-terminée" ), 
 					_ => return Err( "Clé 'Alors' dotée d'une valeur invalide" ), 
 				} 
@@ -208,6 +209,7 @@ fn definir_regle( iterable: &mut Vec<Lemmes>, environnement: &mut Environnement 
 						None, 
 						retrouver_appelable( iterable )? 
 					) ), 
+					Some( Lemmes::Renvoi( _, nom ) ) => sinon.push( Types::Renvoi( String::from( &nom[1..nom.len()-1] ) ) ), 
 					None => return Err( "Clé 'Sinon' non-terminée" ), 
 					_ => return Err( "Clé 'Sinon' dotée d'une valeur invalide" ), 
 				} 
@@ -225,6 +227,7 @@ fn definir_regle( iterable: &mut Vec<Lemmes>, environnement: &mut Environnement 
 						None, 
 						retrouver_appelable( iterable )? 
 					) ), 
+					Some( Lemmes::Renvoi( _, nom ) ) => finalement.push( Types::Renvoi( nom ) ), 
 					None => return Err( "Clé 'Finalement' non-terminée" ), 
 					_ => return Err( "Clé 'Finalement' dotée d'une valeur invalide" ), 
 				} 

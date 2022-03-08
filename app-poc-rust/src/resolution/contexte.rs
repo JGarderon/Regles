@@ -21,6 +21,15 @@ pub struct Contexte<'env> {
 } 
 
 impl<'env> Contexte<'env> { 
+	pub fn repositionner( &mut self, nom: &String ) -> Result<(),&'static str> { 
+		match self.regles.iter().position(
+			|env_regle| &env_regle.parent.nom == nom 
+		) { 
+			Some( p ) => self.position = p, 
+			None => return Err( "Appel d'une règle inconnue lors d'un repositionnement" ) 
+		} 
+		Ok( () )
+	} 
 	pub fn raz( &mut self, position: Option<usize> ) { 
 		for clause in self.clauses.iter_mut() { 
 			match clause { 

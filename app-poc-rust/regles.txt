@@ -17,15 +17,21 @@ Condition "date offre spéciale" :
   date.aujourdhui( "<", "2022-02-16" ) 
 
 Condition "réduction maximale" : 
-  panier.total_reduction_verifier( "<", 25, "%" ) 
+  panier.total_reduction_verifier( ">", 25, "%" ) 
+
+Condition "toujours vraie" : 
+  v() 
+
+Condition "toujours faux" : 
+  f() 
 
 Règle "réduction applicable" (0) : 
   Si 
     ?"réduction maximale" 
-  Sinon 
-    quefaire()  
+  Alors 
+    !"fin" 
 
-Règle "réduction" (90) : 
+Règle "réduction" (10) : 
   Si 
     ?"offre spéciale" et ?"date offre spéciale" 
   Alors 
@@ -35,3 +41,8 @@ Règle "réduction" (90) :
     panier.reduction( -5, "%" ) 
   Finalement 
     panier.mettre_a_jour() 
+
+
+Règle "fin" (20) : 
+  Si ?"toujours vraie"
+

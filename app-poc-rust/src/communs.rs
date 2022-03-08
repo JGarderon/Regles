@@ -9,6 +9,7 @@ pub enum Types {
 	Variable(String), 
 	Conditionnel(String), 
 	Appelable(String, Option<bool>, Vec<Types>), 
+	Renvoi(String), 
 	Ouverture, 
 	Fermeture, 
 	Et, 
