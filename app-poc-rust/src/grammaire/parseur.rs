@@ -70,7 +70,7 @@ fn terminal_espace( mut index: usize, corpus: &mut Corpus ) -> RetourTerminaux {
 fn terminal_cle( mut index: usize, texte: &str, corpus: &mut Corpus ) -> RetourTerminaux { 
 	let taille = texte.chars().count(); 
 	if ( index + taille ) >= corpus.source.contenu.len() { 
-		return Err( "terminal_texte source insuffisante" ); 
+		return Ok( 0 );  
 	} 
 	if corpus.source.contenu[index..index+taille].iter().eq( 
 		&texte.chars().collect::<Vec<char>>() 

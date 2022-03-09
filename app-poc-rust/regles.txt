@@ -1,37 +1,41 @@
 
-Variable message_bonjour : 
+Variable message_bonjour: 
   "bonjour" 
 
-Variable message_1 : 
+Variable message_1: 
   1 
 
 Condition "est membre": 
   client.est_membre( 50, "jours" ) 
 
-Condition "offre spéciale" : 
+Condition "offre spéciale": 
   ?"est membre"
   et 
   client.total_historique( ceci_est_une_variable, ">", 1000 ) 
 
-Condition "date offre spéciale" : 
+Condition "date offre spéciale": 
   date.aujourdhui( "<", "2022-02-16" ) 
 
-Condition "réduction maximale" : 
+Condition "réduction maximale": 
   panier.total_reduction_verifier( ">", 25, "%" ) 
 
-Condition "toujours vraie" : 
+Condition "toujours vraie": 
   v() 
 
-Condition "toujours faux" : 
+Condition "toujours faux": 
   f() 
 
-Règle "réduction applicable" (0) : 
+Règle "fin" (20): 
+  Si 
+    ?"toujours vraie" 
+
+Règle "réduction applicable" (0): 
   Si 
     ?"réduction maximale" 
   Alors 
     !"fin" 
 
-Règle "réduction" (10) : 
+Règle "réduction" (10): 
   Si 
     ?"offre spéciale" et ?"date offre spéciale" 
   Alors 
@@ -41,8 +45,4 @@ Règle "réduction" (10) :
     panier.reduction( -5, "%" ) 
   Finalement 
     panier.mettre_a_jour() 
-
-
-Règle "fin" (20) : 
-  Si ?"toujours vraie"
 

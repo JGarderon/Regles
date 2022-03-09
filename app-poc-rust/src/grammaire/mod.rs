@@ -97,7 +97,10 @@ macro_rules! espaces_optionnels_enregistres {
 #[macro_export]
 macro_rules! terminal_cle {
 	($index:ident,$corpus:ident,$texte:expr) => { 
-		terminal_cle( $index, $texte, $corpus ).unwrap(); 
+		match terminal_cle( $index, $texte, $corpus ) {
+			Ok( taille ) => taille, 
+			e @ Err( _ ) => return e 
+		}
 	}; 
 	($index:ident,$corpus:ident,$texte:expr,$ajouter:expr) => { 
 		match terminal_cle( $index, $texte, $corpus ) {

@@ -66,7 +66,7 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 					i += 1; 
 				}, 
 				Types::Renvoi( nom_regle ) => { 
-					eprintln!( "alors - reposition : {:?}", nom_regle ); 
+					// eprintln!( "alors - reposition : {:?}", nom_regle ); 
 					contexte.repositionner( &nom_regle )?; 
 					avancement = false; 
 				}, 
@@ -87,7 +87,7 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 					i += 1; 
 				}, 
 				Types::Renvoi( nom_regle ) => { 
-					eprintln!( "sinon - reposition : {:?}", nom_regle ); 
+					// eprintln!( "sinon - reposition : {:?}", nom_regle ); 
 					contexte.repositionner( &nom_regle )?; 
 					avancement = false; 
 				}, 
@@ -107,7 +107,7 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 					dialogue.soumettre( &fct, &args )?; 
 				}, 
 				Types::Renvoi( nom_regle ) => { 
-					eprintln!( "finalement - reposition : {:?}", nom_regle ); 
+					// eprintln!( "finalement - reposition : {:?}", nom_regle ); 
 					contexte.repositionner( &nom_regle )?; 
 					avancement = false; 
 				}, 
@@ -130,7 +130,7 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 pub fn executer( environnement: &Environnement ) -> Result<(), &'static str> { 
 	let mut contexte = contexte_resolution( &environnement)?; 
 	let mut dialogue: Dialogue = Dialogue::creer(); 
-	println!("contexte = {:#?}", contexte.regles);
+	println!("contexte = {:#?}", contexte);
 	loop {
 		if !dialogue.initier( environnement )? { 
 			break; 
