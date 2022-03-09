@@ -3,9 +3,6 @@ use std::env;
 
 pub mod contexte; 
 
-pub mod traitement; 
-use crate::resolution::traitement::executer as resolution_traitement_executer; 
-
 pub mod asservi; 
 use crate::resolution::asservi::executer as resolution_asservi_executer; 
 
