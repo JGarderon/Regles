@@ -68,7 +68,7 @@ class ExecuteurSimulation:
 
 	async def initier( self ): 
 		global TEMPS_SIMULATION_MAX 
-		print( id(self), "exécuteur - initier", "!", self.nbre, "sur", self.maxi, "essai(s)" ) 
+		print( id(self), "exécuteur - initier --->", "!", self.nbre, "sur", self.maxi, "essai(s)" ) 
 		etat = False if self.maxi <= self.nbre else True 
 		self.nbre += 1 
 		await asyncio.sleep( random.randint( 0, TEMPS_SIMULATION_MAX ) ) 
@@ -76,15 +76,15 @@ class ExecuteurSimulation:
 
 	async def definir( self, ligne ): 
 		global TEMPS_SIMULATION_MAX 
-		print( id(self), "exécuteur - définir", ligne ) # shlex.split( ligne ) ) 
+		print( id(self), "exécuteur - définir --->", ligne ) # shlex.split( ligne ) ) 
 		await asyncio.sleep( random.randint( 0, TEMPS_SIMULATION_MAX ) ) 
 		return "o\n" 
 
 	async def faire( self, ligne ): 
 		global TEMPS_SIMULATION_MAX 
-		print( id(self), "exécuteur - faire", ligne ) # shlex.split( ligne ) ) 
+		print( id(self), "exécuteur - faire --->", ligne ) # shlex.split( ligne ) ) 
 		await asyncio.sleep( random.randint( 0, TEMPS_SIMULATION_MAX) ) 
-		return "f\n" if random.randint( 1, 5 ) == 5 else "v\n" 
+		return "f\n" if random.randint( 1, 2 )%2 == 0 else "v\n" 
 
 ### ----------------------------------------------
 

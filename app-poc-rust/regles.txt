@@ -2,8 +2,8 @@
 Variable message_bonjour: 
   "bonjour" 
 
-Variable message_1: 
-  1 
+Variable taux_max: 
+  25 
 
 Condition "est membre": 
   client.est_membre( 50, "jours" ) 
@@ -11,29 +11,19 @@ Condition "est membre":
 Condition "offre spéciale": 
   ?"est membre"
   et 
-  client.total_historique( ceci_est_une_variable, ">", 1000 ) 
+  client.total_historique( ceci_est_une_variable_locale_a_l_executeur, ">", 1000 ) 
 
 Condition "date offre spéciale": 
   date.aujourdhui( "<", "2022-02-16" ) 
 
-Condition "réduction maximale": 
-  panier.total_reduction_verifier( ">", 25, "%" ) 
-
-Condition "toujours vraie": 
-  v() 
-
-Condition "toujours faux": 
-  f() 
-
-Règle "fin" (20): 
-  Si 
-    ?"toujours vraie" 
+Condition "réduction maximale atteinte": 
+  panier.total_reduction_verifier( ">", taux_max, "%" ) 
 
 Règle "réduction applicable" (0): 
   Si 
-    ?"réduction maximale" 
+    ?"réduction maximale atteinte" 
   Alors 
-    !"fin" 
+    !"" 
 
 Règle "réduction" (10): 
   Si 

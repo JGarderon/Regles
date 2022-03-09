@@ -21,6 +21,12 @@ pub struct Contexte<'env> {
 } 
 
 impl<'env> Contexte<'env> { 
+	pub fn repositionner_index( &mut self, index: Option<usize> ) { 
+		match index { 
+			Some( p ) => self.position = p, 
+			None => self.position = self.regles.len() 
+		}; 
+	} 
 	pub fn repositionner( &mut self, nom: &String ) -> Result<(),&'static str> { 
 		match self.regles.iter().position(
 			|env_regle| &env_regle.parent.nom == nom 

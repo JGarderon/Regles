@@ -65,6 +65,7 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 					dialogue.soumettre( &fct, &args )?; 
 					i += 1; 
 				}, 
+				Types::Renvoi( nom_regle ) if &nom_regle[..] == "" => contexte.repositionner_index( None ), 
 				Types::Renvoi( nom_regle ) => { 
 					// eprintln!( "alors - reposition : {:?}", nom_regle ); 
 					contexte.repositionner( &nom_regle )?; 
@@ -86,6 +87,7 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 					dialogue.soumettre( &fct, &args )?; 
 					i += 1; 
 				}, 
+				Types::Renvoi( nom_regle ) if &nom_regle[..] == "" => contexte.repositionner_index( None ), 
 				Types::Renvoi( nom_regle ) => { 
 					// eprintln!( "sinon - reposition : {:?}", nom_regle ); 
 					contexte.repositionner( &nom_regle )?; 
@@ -106,6 +108,7 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 				Types::Appelable( fct, _, args ) => { 
 					dialogue.soumettre( &fct, &args )?; 
 				}, 
+				Types::Renvoi( nom_regle ) if &nom_regle[..] == "" => contexte.repositionner_index( None ), 
 				Types::Renvoi( nom_regle ) => { 
 					// eprintln!( "finalement - reposition : {:?}", nom_regle ); 
 					contexte.repositionner( &nom_regle )?; 
@@ -130,7 +133,7 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 pub fn executer( environnement: &Environnement ) -> Result<(), &'static str> { 
 	let mut contexte = contexte_resolution( &environnement)?; 
 	let mut dialogue: Dialogue = Dialogue::creer(); 
-	println!("contexte = {:#?}", contexte);
+	// println!("contexte = {:#?}", contexte);
 	loop {
 		if !dialogue.initier( environnement )? { 
 			break; 

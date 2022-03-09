@@ -49,7 +49,7 @@ impl Dialogue {
 	} 
 	pub fn soumettre( &mut self, fct: &String, args: &Vec<Types> ) -> Result<bool, &'static str> { 
 		io::stdout().write_all( 
-			format!( "{}\n", 
+			format!( "executer {}\n", 
 				args.iter().fold( 
 					fct.clone(), 
 					|acc, item| { 
@@ -100,11 +100,11 @@ impl Dialogue {
 			"n" => return Err( "Le processus distant n'est pas prêt à exécuter les consignes du moteur de règles" ), 
 			_ => return Err( "Le processus distant a répondu hors des valeurs autorisées au moment de l'initialisation générale" ) 
 		} 
-		for (_, variable) in environnement.variables.iter() { 
-			let message = match variable { 
-				Types::Nombre( n ) => n.to_string(), 
-				Types::Texte( t ) => format!( "\"{}\"", t.to_string() ), 
-				Types::Variable( v ) => format!( "${}", v.to_string() ), 
+		for (variable_nom, variable_valeur) in environnement.variables.iter() { 
+			let message = match variable_valeur { 
+				Types::Nombre( n ) => format!( "\"{}\" {}", variable_nom, n.to_string() ), 
+				Types::Texte( t ) => format!( "\"{}\" \"{}\"", variable_nom, t.to_string() ), 
+				Types::Variable( v ) => format!( "\"{}\" ${}", variable_nom, v.to_string() ), 
 				_ => return Err( "Définition de variable invalide lors de l'initialisation du contexte inter-processus" ) 
 			}; 
 			match self.parler( &format!( "definir {}", message )[..] )?.trim_end() { 
