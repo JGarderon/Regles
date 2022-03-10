@@ -21,7 +21,7 @@ class Moteur:
 	
 	def __init__( self, executeur ): 
 		self.processus = subprocess.Popen( 
-			"target/release/app-poc-rust", 
+			"target/release/Regle", 
 			stdin=subprocess.PIPE, 
 			stdout=subprocess.PIPE, 
 			bufsize=1,

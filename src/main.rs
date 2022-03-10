@@ -114,7 +114,7 @@
 //! cargo build --release && RESOLUTION_TYPE=asservi REGLES_SOURCE=./regles.txt ./superviseur.py 
 //! ``` 
 //! 
-//! ... Vous verrez alors apparaître une sortie similaire à ceci au bout d'une seconde ou deux : 
+//! ... Vous verrez alors apparaître une sortie similaire (plus ou moins fournie, les états du simulateur sont aléatoires) à ceci au bout d'une seconde ou deux : 
 //! 
 //! ```
 //!    Compiling Regle v1.0.0 (/home/julien/Developpement/graphe-inference/regle)
