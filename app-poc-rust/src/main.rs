@@ -64,11 +64,47 @@
 //! 
 //! Une clause définie de la même façon à plusieurs endroits (y compris dans l'ordre des arguments), aura un seul objet en mémoire la représentant au sein d'un contexte de résolution. Ainsi il n'est pas dommageable dans la création des conditions ou dans un jeu de conditions embriquées, d'avoir plusieurs fois le même appels à une même clause : il n'y aura qu'une seule appelée / exécutée à la fin. 
 //! 
-//! Il est à noter que si l'exécuteur exécute un appelable qui a des effets de bord, le résultat pourrait être inattendu (et catastrophique). Sachant qu'une clause peut être seulement une fois au travers de plusieurs conditions voire de plusieurs règles, la fonction distante doit être la plus "pure" (au sens où elle marginalise le risque d'avoir un retour différent à chaque appel, ou de provoquer un changement d'état de l'exécuteur lui-même). 
+//! Il est à noter que si l'exécuteur exécute un appelable qui a des effets de bord, le résultat pourrait être inattendu (et catastrophique). Sachant qu'une clause peut être seulement exécutée une fois au travers de plusieurs conditions voire de plusieurs règles, la fonction distante doit être la plus "pure" (au sens où elle marginalise le risque d'avoir un retour différent dans un contexte identique, ou de provoquer un changement d'état de l'exécuteur lui-même). 
 //! 
 //! ### Définir une 'Règle' 
 //! 
+//! La Règle est le plus haut niveau et regroupe à la fois des conditions (donc les clauses qui y sont contenues), ainsi que des appelables, c'est-à-des fonctions demandées à l'exécuteur (le processus distant). Une règle se compose de plusieurs parties de corps, et doit forcément avoir avoir son premier bloc : 'Si'. Ce bloc déclare la ou les conditions de la règles. 
 //! 
+//! Les autres corps sont optionnels, mais doivent seulement respecter un ordre d'apparition : 
+//!   - 'Alors' : sera exécuté seulement si la ou les conditions retournent un état négatif ; 
+//!   - 'Sinon' : sera exécuté seulement si la ou les conditions retourne un état négatif ; 
+//!   - 'Finalement' : sera exécuté si le corps 'Alors' ou 'Sinon' est exécuté. 
+//! 
+//! Attention, le moteur ne contrôle pas la logique d'ensemble : un corps 'Finalement', sans un corps 'Alors' ou 'Sinon', ne sera jamais exécuté. 
+//! 
+//! Les règles sont triées entre elles par un poids, qui est un élément indispensable de la déclaration d'une règle. Ce poids est un nombre (de type [`f64`]) et peut être donc être négatif. Le tri se fait de la valeur la plus faible (qui est tentée en premier) à la plus élevée (qui est tenté en dernier). 
+//! 
+//! En terme du programme, le passage d'une règle à l'autre se fait en incrément de 1 sur la position au sein d'un vecteur de Règles. Pour permettre des embranchements ou des boucles, il est possible de d'indiquer comme appelable, la formule spéciale du Renvoi. C'est-à-dire la déclaration d'un nom d'une autre règle, qui sera donc la prochaine position qui sera jouée. Un renvoi dont le nom nul (c'est-à-dire une absence de texte entre les guillements), équivaut à avoir la position la plus élevée et donc arrêter le moteur de règles pour ce contexte. 
+//! 
+//! Voici un exemple de règle classique : 
+//! 
+//! ```
+//! Règle "réduction" (10): 
+//!   Si 
+//!     ?"offre spéciale" et ?"date offre spéciale" 
+//!   Alors 
+//!     panier.reduction( 10.5, "%" ), 
+//!     panier.notification( message_bonjour, "bravo, vous êtes un client fidèle" ) 
+//!   Sinon 
+//!     panier.reduction( -5, "%" ) 
+//!   Finalement 
+//!     panier.mettre_a_jour() 
+//! ```
+//! 
+//! Vous pouvez aussi sortir rapidement de votre parcours des règles (du contexte) de cette façon, en fonction d'une condition réussie : 
+//! 
+//! ```
+//! Règle "réduction applicable" (0): 
+//!   Si 
+//!     ?"réduction maximale atteinte" 
+//!   Alors 
+//!     !"" 
+//! ```
 //! 
 //! ## Licences et support 
 //!
@@ -89,6 +125,7 @@ use crate::resolution::contexte::Contexte;
 use crate::resolution::contexte::construire as contexte_resolution; 
 use crate::resolution::executer as resolution_executer; 
 
+/// La fonction `main` n'a pour seule tâche que d'appeler la fonction de résolution et de gérer l'affichage sur le `stderr` d'une erreur rencontrée par le programme. 
 fn main() { 
 	match resolution_executer() { 
 		Ok( _ ) => (), 
