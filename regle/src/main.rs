@@ -106,6 +106,34 @@
 //!     !"" 
 //! ```
 //! 
+//! ## Envie de tester ? 
+//! 
+//! Une fois le projet Git cloné localement, Python et Rust installés sur votre ordinateur, vous pouvez jouer la commande suivante depuis le répertoire dans votre consoole : 
+//! 
+//! ```bash
+//! cargo build --release && RESOLUTION_TYPE=asservi REGLES_SOURCE=./regles.txt ./superviseur.py 
+//! ``` 
+//! 
+//! ... Vous verrez alors apparaître une sortie similaire à ceci au bout d'une seconde ou deux : 
+//! 
+//! ```
+//!    Compiling Regle v1.0.0 (/home/julien/Developpement/graphe-inference/regle)
+//!     Finished release [optimized] target(s) in 1.26s
+//! 140133526019376 exécuteur - initier ---> ! 0 sur 1 essai(s)
+//! 140133526019376 exécuteur - définir ---> definir "message_bonjour" "bonjour"
+//! 140133526019376 exécuteur - définir ---> definir "taux_max" 25
+//! 140133526019376 exécuteur - faire ---> executer panier.total_reduction_verifier ">" $taux_max "%"
+//! 140133526019376 exécuteur - faire ---> executer client.est_membre 50 "jours"
+//! 140133526019376 exécuteur - faire ---> executer client.total_historique $ceci_est_une_variable_locale_a_l_executeur ">" 1000
+//! 140133526019376 exécuteur - faire ---> executer date.aujourdhui "<" "2022-02-16"
+//! 140133526019376 exécuteur - faire ---> executer panier.reduction 10.5 "%"
+//! 140133526019376 exécuteur - faire ---> executer panier.notification $message_bonjour "bravo, vous êtes un client fidèle"
+//! 140133526019376 exécuteur - faire ---> executer panier.mettre_a_jour
+//! 140133526019376 exécuteur - initier ---> ! 1 sur 1 essai(s)
+//! ``` 
+//! 
+//! Bravo, vous avez joué un jeu de règles de test ! 
+//! 
 //! ## Licences et support 
 //!
 //! Fruit d'un travail de recherche et de réflexion, ce programme est mis à disposition sans aucune garantie de fonctionnement, et pour celle restriction, le respect [de la licence MIT](https://fr.wikipedia.org/wiki/Licence_MIT). Il est pensé prioritaire pour des systèmes UNIX/Linux. 
@@ -114,23 +142,32 @@
 //!
 #![allow(warnings, unused)] 
 
-mod communs; 
-use crate::communs::Types; 
-
-mod grammaire; 
-use crate::grammaire::constructeur::construire as environnement_construire; 
-
+/// Le module [`resolution`] s'occupe de gérer les contextes, c'est-à-dire l'objet en mémoire qui porte l'état des clauses et des conditions et règles compilées, en gardant le lien avec l'environnement de règles initial. 
 mod resolution; 
 use crate::resolution::contexte::Contexte;
 use crate::resolution::contexte::construire as contexte_resolution; 
 use crate::resolution::executer as resolution_executer; 
 
-/// La fonction `main` n'a pour seule tâche que d'appeler la fonction de résolution et de gérer l'affichage sur le `stderr` d'une erreur rencontrée par le programme. 
+/// Le module [`communs`] porte les types généraux utilisés dans les règles. A l'avenir, il sera étendu pour augmenter les fonctionnalités courantes du programme. 
+mod communs; 
+use crate::communs::Types; 
+
+/// Second module utilisés après [`resolution`], [`grammaire`] porte les fonctions, macros et structures diverses qui permettent de partir d'un fichier de règles, vers un environnement complet en mémoire. 
+mod grammaire; 
+use crate::grammaire::constructeur::construire as environnement_construire; 
+
+/// La fonction `main` n'a pour seule tâche que d'appeler la fonction de résolution globale [`resolution::executer`] et de gérer l'affichage sur le `stderr` d'une erreur rencontrée par le programme. 
+///
+/// 
+///
 fn main() { 
-	match resolution_executer() { 
-		Ok( _ ) => (), 
-		Err( erreur ) => eprintln!( "# erreur : {}", erreur ) 
-	}; 
+	std::process::exit( match resolution_executer() { 
+		Ok( _ ) => 0, 
+		Err( erreur ) => { 
+			eprintln!( "# erreur : {}", erreur ); 
+			1 
+		} 
+	} ); 
 } 
 
 
