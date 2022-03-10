@@ -1,6 +1,14 @@
 
+
+
+
+
+
+
+--------------
+
 Condition "offre spéciale" (10) : 
-	$date.aujourdhui < 2022-02-16 
+	$date.aujourdhui < "2022-02-16" 
 	& @client.est_membre()
 
 Règle "réduction" (90) : 
