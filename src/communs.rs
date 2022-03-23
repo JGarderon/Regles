@@ -2,6 +2,21 @@
 use std::io::{self, Write}; 
 use crate::grammaire::constructeur::Environnement; 
 
+#[derive(Debug)]
+pub struct Erreur( Vec<String> ); 
+
+impl Erreur {
+	pub fn creer( m_initial: &str ) -> Self {
+		Erreur { 0: vec!( format!( "{}", m_initial ) ) } 
+	} 
+	pub fn creer_chaine( m_initial: String ) -> Self {
+		Erreur { 0: vec!( m_initial ) } 
+	} 
+	pub fn empiler( &mut self, m_suivant: &str ) { 
+		self.0.push( format!( "{}", m_suivant ) ); 
+	} 
+}
+
 #[derive(Debug,PartialEq,PartialOrd,Clone)] 
 pub enum Types {
 	Nombre(f64), 
