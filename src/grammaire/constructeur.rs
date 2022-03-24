@@ -84,26 +84,26 @@ fn retrouver_appelable( iterable: &mut Vec<Lemmes> ) -> Result<Vec<Types>,Erreur
 	Ok( appelable ) 
 }
 
-fn definir_variable( iterable: &mut Vec<Lemmes>, environnement: &mut Environnement ) -> Result<(), &'static str> { 
+fn definir_variable( iterable: &mut Vec<Lemmes>, environnement: &mut Environnement ) -> Result<(), Erreur> { 
 	environnement.definir( 
 		match iterable.pop() { 
 			Some( Lemmes::Variable( _, texte ) ) => texte, 
-			None => return Err( "Variable sans nom" ), 
-			_ => return Err( "Nom de variable incorrect" ) 
+			None => return Err( Erreur::creer( "Variable sans nom" ) ), 
+			_ => return Err( Erreur::creer( "Nom de variable incorrect" ) ) 
 		}, 
 		match iterable.pop() {
 			Some( Lemmes::Texte( _, texte ) ) => Some( Types::Texte( String::from( &texte[1..texte.len()-1] ) ) ),
 			Some( Lemmes::Nombre( _, nbre_textuel ) ) => match &nbre_textuel.parse::<f64>() { 
 				Ok( nbre ) => Some( Types::Nombre( *nbre ) ), 
-				Err( _ ) => return Err( "Corps de variable numéraire incorrect" ) 
+				Err( _ ) => return Err( Erreur::creer( "Corps de variable numéraire incorrect" ) ) 
 			}, 
-			None => return Err( "Variable sans corps" ), 
-			_ => return Err( "Corps de variable non-supporté" ) 
+			None => return Err( Erreur::creer( "Variable sans corps" ) ), 
+			_ => return Err( Erreur::creer( "Corps de variable non-supporté" ) ) 
 		} 
 	); 
 	match iterable.pop() {
 		Some( Variable_Fin ) => return Ok( () ),
-		None => return Err( "Définition de variable non-explicitement terminée" ) 
+		None => return Err( Erreur::creer( "Définition de variable non-explicitement terminée" ) ) 
 	} 
 } 
 
@@ -173,6 +173,7 @@ fn definir_regle( iterable: &mut Vec<Lemmes>, environnement: &mut Environnement 
 		item @ _ => return Err( 
 			Erreur::creer_chaine( 
 				format!( "Poids de règle incorrect : '{:?}'", item ) 
+			) 
 		) 
 	}; 
 	match iterable.pop() { 
@@ -192,7 +193,7 @@ fn definir_regle( iterable: &mut Vec<Lemmes>, environnement: &mut Environnement 
 			Some( Lemmes::Ou( _ ) ) => si.push( Types::Ou ), 
 			None => return Err( Erreur::creer( "Une fin de clé 'Si' est attendue" ) ), 
 			item @ _ => return Err( 
-				Erreur::creer( 
+				Erreur::creer_chaine( 
 					format!( "La clé 'Si' ne peut comporter que des conditionnalités : '{:?}'", item ) 
 				) 
 			) 

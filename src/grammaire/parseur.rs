@@ -8,6 +8,7 @@ use crate::terminal_cle;
 use crate::nonterminal_regle_partie; 
 
 use crate::grammaire::source::Source; 
+use crate::grammaire::Erreur;
 
 #[derive(Debug)] 
 pub enum Lemmes { 
@@ -105,10 +106,14 @@ fn terminal_nombre( mut index: usize, corpus: &mut Corpus ) -> RetourTerminaux {
 	while index < max { 
 		match corpus.source.contenu[index] { 
 			'-' if origine == index => (), 
-			'-' if origine < index => return Err( "Expression de nombre en erreur" ), 
+			'-' if origine < index => return Err( 
+				Erreur::creer( "Expression de nombre en erreur" ) 
+			), 
 			'0' ... '9' => (), 
 			'.' if point == 0 => point += 1, 
-			'.' if point > 0 => return Err( "Un nombre est en erreur" ), 
+			'.' if point > 0 => return Err( 
+				Erreur::creer( "Un nombre est en erreur" ) 
+			), 
 			_ => break 
 		} 
 		index += 1; 
@@ -132,7 +137,9 @@ fn terminal_texte( mut index: usize, corpus: &mut Corpus ) -> RetourTerminaux {
 		index += 1; 
 	} 
 	if ouvert { 
-		Err( "Un texte n'a pas été fermé alors que la source est tarie" ) 
+		Err( 
+			Erreur::creer( "Un texte n'a pas été fermé alors que la source est tarie" ) 
+		) 
 	} else { 
 		Ok( index - origine ) 
 	} 
@@ -147,7 +154,9 @@ pub fn nonterminal_conditionnel( mut index: usize, corpus: &mut Corpus, _ajouter
 		corpus, 
 		terminal_texte, 
 		Lemmes::Conditionnel, 
-		Err( "Un nom de condition appelable est obligatoire pour définir un conditionnel" ) 
+		Err( 
+			Erreur::creer( "Un nom de condition appelable est obligatoire pour définir un conditionnel" ) 
+		) 
 	); 
 	Ok( index - origine ) 
 } 
@@ -161,7 +170,9 @@ pub fn nonterminal_renvoi( mut index: usize, corpus: &mut Corpus, _ajouter: bool
 		corpus, 
 		terminal_texte, 
 		Lemmes::Renvoi, 
-		Err( "Un nom de règle est obligatoire pour définir un renvoi" ) 
+		Err( 
+			Erreur::creer( "Un nom de règle est obligatoire pour définir un renvoi" ) 
+		) 
 	); 
 	Ok( index - origine ) 
 } 
@@ -189,19 +200,23 @@ pub fn nonterminal_variable( mut index: usize, corpus: &mut Corpus, ajouter: boo
 	espaces!( index, corpus ); 
 	terminal_cle!( index, corpus, "Variable", false ); 
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Variable_Depart ); 
-	espaces!( index, corpus, Err( "Le séparateur espace non-trouvé #6" ) ); 
+	espaces!( index, corpus, Err( Erreur::creer( "Le séparateur espace non-trouvé #6" ) ) ); 
 	ajouter_lemme_terminal!( 
 		index, 
 		corpus, 
 		terminal_variable, 
 		Lemmes::Variable, 
-		Err( "Un nom de variable à définir est obligatoire" ) 
+		Err( 
+			Erreur::creer( "Un nom de variable à définir est obligatoire" ) 
+		) 
 	); 
 	espaces!( index, corpus ); 
-	terminal_cle!( index, corpus, ":", false, Err("Le séparateur n'a pas été trouvé") ); 
-	espaces!( index, corpus, Err( "Le séparateur espace non-trouvé  #5" ) ); 
+	terminal_cle!( index, corpus, ":", false, Err( Erreur::creer( "Le séparateur n'a pas été trouvé" ) ) ); 
+	espaces!( index, corpus, Err( Erreur::creer( "Le séparateur espace non-trouvé  #5" ) ) ); 
 	match nonterminal_valeur( index, corpus, true ) { 
-		Ok( 0 ) => return Err( "Une valeur est attendue lors de la définition d'une variable" ), 
+		Ok( 0 ) => return Err( 
+			Erreur::creer( "Une valeur est attendue lors de la définition d'une variable" ) 
+		), 
 		Ok( taille ) => index += taille, 
 		Err( erreur ) => return Err( erreur ) 
 	} 
@@ -218,11 +233,15 @@ pub fn nonterminal_appelable( mut index: usize, corpus: &mut Corpus, ajouter: bo
 		corpus, 
 		terminal_variable, 
 		Lemmes::Variable, 
-		Err( "Un nom de variable appelable est obligatoire" ) 
+		Err( 
+			Erreur::creer( "Un nom de variable appelable est obligatoire" ) 
+		) 
 	); 
 	espaces!( index, corpus ); 
 	if terminal_cle!( index, corpus, "(" ) == 0 { 
-		return Err( "L'appel ouvrant n'est pas trouvé" ); 
+		return Err( 
+			Erreur::creer( "L'appel ouvrant n'est pas trouvé" ) 
+		); 
 	} else { 
 		index += 1; 
 	}
@@ -232,7 +251,7 @@ pub fn nonterminal_appelable( mut index: usize, corpus: &mut Corpus, ajouter: bo
 		match nonterminal_valeur( index, corpus, true ) { 
 			Ok( 0 ) => break, 
 			Ok( taille ) => index += taille, 
-			Err( erreur ) => { println!("err : {:?}", erreur); break; } 
+			Err( erreur ) => break 
 		} 
 		espaces!( index, corpus ); 
 		if terminal_cle!( index, corpus, "," ) == 0 { 
@@ -243,7 +262,9 @@ pub fn nonterminal_appelable( mut index: usize, corpus: &mut Corpus, ajouter: bo
 	} 
 	espaces!( index, corpus ); 
 	if terminal_cle!( index, corpus, ")" ) == 0 { 
-		return Err( "L'appel fermant n'est pas trouvé" ); 
+		return Err( 
+			Erreur::creer( "L'appel fermant n'est pas trouvé" ) 
+		); 
 	} else {
 		index += 1; 
 	}
@@ -256,11 +277,11 @@ pub fn nonterminal_conditionnel_ou_appelable( mut index: usize, corpus: &mut Cor
 	match nonterminal_conditionnel( index, corpus, true ) { 
 		Ok( 0 ) => (), 
 		Ok( taille ) => return Ok( taille ), 
-		Err( erreur ) => return Err( erreur ) 
+		Err( erreur ) => return Err( erreur.empiler( "Appelable 'nonterminal_conditionnel_ou_appelable'" ) ) 
 	} 
 	match nonterminal_appelable( index, corpus, true ) { 
 		Ok( taille ) => return Ok( taille ), 
-		Err( erreur ) => return Err( erreur ) 
+		Err( erreur ) => return Err( erreur.empiler( "Appelable 'nonterminal_conditionnel_ou_appelable'" ) ) 
 	} 
 } 
 
@@ -269,22 +290,26 @@ pub fn nonterminal_condition( mut index: usize, corpus: &mut Corpus, ajouter: bo
 	espaces!( index, corpus ); 
 	terminal_cle!( index, corpus, "Condition", false ); 
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Condition_Depart ); 
-	espaces!( index, corpus, Err( "Le séparateur espace non-trouvé #2" ) ); 
+	espaces!( index, corpus, Err( Erreur::creer( "Le séparateur espace non-trouvé #2" ) ) ); 
 	ajouter_lemme_terminal!( 
 		index, 
 		corpus, 
 		terminal_texte, 
 		Lemmes::Texte, 
-		Err( "Un nom de condition à définir est obligatoire" ) 
+		Err( 
+			Erreur::creer( "Un nom de condition à définir est obligatoire" ) 
+		) 
 	); 
 	espaces!( index, corpus ); 
-	terminal_cle!( index, corpus, ":", false, Err("Le séparateur n'a pas été trouvé") ); 
-	espaces!( index, corpus, Err( "Le séparateur espace non-trouvé #1" ) ); 
+	terminal_cle!( index, corpus, ":", false, Err( Erreur::creer( "Le séparateur n'a pas été trouvé") ) ); 
+	espaces!( index, corpus, Err( Erreur::creer( "Le séparateur espace non-trouvé #1" ) ) ); 
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Clause_Depart ); 
 	match nonterminal_conditionnel_ou_appelable( index, corpus, true ) { 
-		Ok( 0 ) => return Err( "Une condition est sans aucune clause appelable" ), 
+		Ok( 0 ) => return Err( 
+			Erreur::creer( "Une condition est sans aucune clause appelable" )
+		), 
 		Ok( taille ) => index += taille, 
-		Err( erreur ) => return Err( erreur )
+		Err( erreur ) => return Err( erreur.empiler( "Appelable 'nonterminal_condition'" ) ) 
 	} 
 	loop { 
 		espaces!( index, corpus ); 
@@ -301,11 +326,15 @@ pub fn nonterminal_condition( mut index: usize, corpus: &mut Corpus, ajouter: bo
 		} 
 		espaces!( index, corpus ); 
 		match nonterminal_appelable( index, corpus, true ) { 
-			Ok( 0 ) => return Err( "Un opérateur logique de condition est sans aucune clause appelable" ), 
+			Ok( 0 ) => return Err( 
+				Erreur::creer( "Un opérateur logique de condition est sans aucune clause appelable" ) 
+			), 
 			Ok( taille ) => index += taille, 
-			Err( erreur ) => return Err( erreur ) 
+			Err( erreur ) => return Err( 
+				erreur.empiler( "Appelable nonterminal_condition" )
+			) 
 		} 
-	}
+	} 
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Clause_Fin ); 
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Condition_Fin ); 
 	// println!("{:?}", corpus.source.contenu[0..index].iter().collect::<String>() );
@@ -315,11 +344,11 @@ pub fn nonterminal_condition( mut index: usize, corpus: &mut Corpus, ajouter: bo
 pub fn nonterminal_regle_partie_si( mut index: usize, corpus: &mut Corpus, _ajouter: bool ) -> RetourTerminaux { 
 	let origine = index.clone(); 
 	espaces!( index, corpus ); 
-	terminal_cle!( index, corpus, "Si", false, Err("L'opérateur de règle 'Si' est obligatoire") ); 
+	terminal_cle!( index, corpus, "Si", false, Err( Erreur::creer( "L'opérateur de règle 'Si' est obligatoire" ) ) ); 
 	match nonterminal_conditionnel( index, corpus, true ) { 
 		Ok( 0 ) => (), 
 		Ok( taille ) => index += taille, 
-		Err( erreur ) => return Err( erreur ) 
+		Err( erreur ) => return Err( erreur.empiler( "Appelable 'nonterminal_regle_partie_si'" ) ) 
 	} 
 	loop { 
 		espaces!( index, corpus ); 
@@ -336,9 +365,9 @@ pub fn nonterminal_regle_partie_si( mut index: usize, corpus: &mut Corpus, _ajou
 		} 
 		espaces!( index, corpus ); 
 		match nonterminal_conditionnel( index, corpus, true ) { 
-			Ok( 0 ) => return Err( "Une condition doit être ajouté après un opérateur 'Si'" ), 
+			Ok( 0 ) => return Err( Erreur::creer( "Une condition doit être ajouté après un opérateur 'Si'" ) ), 
 			Ok( taille ) => index += taille, 
-			Err( erreur ) => return Err( erreur ) 
+			Err( erreur ) => return Err( erreur.empiler( "Appelable 'nonterminal_regle_partie_si'" ) ) 
 		} 
 	} 
 	Ok( index - origine ) 
@@ -352,26 +381,28 @@ pub fn nonterminal_regle( mut index: usize, corpus: &mut Corpus, ajouter: bool )
 	} 
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Regle_Depart ); 
 	index += 5; 
-	espaces!( index, corpus, Err( "Un séparateur est obligatoire à la déclaration d'une règle" ) ); 
+	espaces!( index, corpus, Err( Erreur::creer( "Un séparateur est obligatoire à la déclaration d'une règle" ) ) ); 
 	ajouter_lemme_terminal!( 
 		index, 
 		corpus, 
 		terminal_texte, 
 		Lemmes::Texte, 
-		Err( "Un nom de règle à définir est obligatoire" ) 
+		Err( 
+			Erreur::creer( "Un nom de règle à définir est obligatoire" ) 
+		) 
 	); 
 	espaces!( index, corpus ); 
-	terminal_cle!( index, corpus, "(", false, Err("L'ouverture de poids n'est pas trouvée") ); 
+	terminal_cle!( index, corpus, "(", false, Err( Erreur::creer( "L'ouverture de poids n'est pas trouvée") ) ); 
 	ajouter_lemme_terminal!( 
 		index, 
 		corpus, 
 		terminal_nombre, 
 		Lemmes::Regle_Poids, 
-		Err( "Un poids de règle est obligatoire" ) 
+		Err( Erreur::creer( "Un poids de règle est obligatoire" ) ) 
 	); 
-	terminal_cle!( index, corpus, ")", false, Err("La fermeture de poids n'est pas trouvée") ); 
+	terminal_cle!( index, corpus, ")", false, Err( Erreur::creer( "La fermeture de poids n'est pas trouvée") ) ); 
 	espaces!( index, corpus ); 
-	terminal_cle!( index, corpus, ":", false, Err("Le séparateur de règle n'a pas été trouvé") ); 
+	terminal_cle!( index, corpus, ":", false, Err( Erreur::creer( "Le séparateur de règle n'a pas été trouvé") ) ); 
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Si_Depart ); 
 	index += nonterminal_regle_partie_si( index, corpus, true )?; 
 	ajouter_lemme_grammatical!( index, corpus, Lemmes::Si_Fin ); 
@@ -382,12 +413,12 @@ pub fn nonterminal_regle( mut index: usize, corpus: &mut Corpus, ajouter: bool )
 	Ok( index - origine ) 
 } 
 
-pub fn charger( chemin: String ) -> Result<Corpus, &'static str> { 
+pub fn charger( chemin: String ) -> Result<Corpus, Erreur> { 
 	let mut corpus = Corpus {
 		source: match Source::creer( chemin ) { 
 			Ok( source ) => source, 
 			Err( _ ) => return Err( 
-				"le fichier source n'est pas disponible" 
+				Erreur::creer( "le fichier source n'est pas disponible" )
 			) 
 		}, 
 		lemmes: vec!() 

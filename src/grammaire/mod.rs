@@ -1,5 +1,7 @@
 
-type RetourTerminaux = Result<usize, &'static str>;
+use crate::communs::Erreur; 
+
+type RetourTerminaux = Result<usize, Erreur>; 
 
 pub mod source; 
 use crate::grammaire::source::Source; 
@@ -18,19 +20,19 @@ macro_rules! nonterminal_regle_partie {
 		espaces!( $index, $corpus ); 
 		if terminal_cle!( $index, $corpus, $cle ) == 0 { 
 			if $obligatoire == true {
-				return Err( "Une clé est obligatoire" ); 
+				return Err( Erreur::creer( "Une clé est obligatoire" ) ); 
 			} 
 		} else {
 			ajouter_lemme_grammatical!( $index, $corpus, $lemme_depart ); 
 			$index += $taille; 
 			match nonterminal_renvoi( $index, $corpus, true ) { 
 				Ok( 0 ) => match nonterminal_appelable( $index, $corpus, false ) { 
-					Ok( 0 ) => return Err( "Aucune clause appelable après une clé" ), 
+					Ok( 0 ) => return Err( Erreur::creer( "Aucune clause appelable après une clé" ) ), 
 					Ok( taille ) => $index += taille, 
-					Err( erreur ) => return Err( erreur ) 
+					Err( erreur ) => return Err( erreur.empiler( "Macro 'nonterminal_regle_partie'" ) ) 
 				}, 
 				Ok( taille ) => $index += taille, 
-				Err( erreur ) => return Err( erreur ) 
+				Err( erreur ) => return Err( erreur.empiler( "Macro 'nonterminal_regle_partie'" ) ) 
 			} 
 			loop { 
 				espaces!( $index, $corpus ); 
@@ -44,12 +46,12 @@ macro_rules! nonterminal_regle_partie {
 				espaces!( $index, $corpus ); 
 				match nonterminal_renvoi( $index, $corpus, true ) { 
 					Ok( 0 ) => match nonterminal_appelable( $index, $corpus, false ) { 
-						Ok( 0 ) => return Err( "Aucune clause appelable après un séparateur" ), 
+						Ok( 0 ) => return Err( Erreur::creer( "Aucune clause appelable après un séparateur" ) ), 
 						Ok( taille ) => $index += taille, 
-						Err( erreur ) => return Err( erreur ) 
+						Err( erreur ) => return Err( erreur.empiler( "Macro 'nonterminal_regle_partie'" ) ) 
 					}, 
 					Ok( taille ) => $index += taille, 
-					Err( erreur ) => return Err( erreur ) 
+					Err( erreur ) => return Err( erreur.empiler( "Macro 'nonterminal_regle_partie'" ) ) 
 				}
 				
 			} 
