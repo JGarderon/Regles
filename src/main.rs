@@ -164,7 +164,7 @@ fn main() {
 	std::process::exit( match resolution_executer() { 
 		Ok( _ ) => 0, 
 		Err( erreur ) => { 
-			eprintln!( "# erreur : {}", erreur ); 
+			erreur.afficher( "erreur fatale" ); 
 			1 
 		} 
 	} ); 

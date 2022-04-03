@@ -6,6 +6,8 @@ use crate::grammaire::constructeur::EnvironnementRegle;
 use crate::grammaire::constructeur::Environnement; 
 use crate::communs::Types; 
 
+use crate::communs::Erreur; 
+
 #[derive(Debug)] 
 pub struct ContexteRegle<'env> { 
 	pub parent: &'env EnvironnementRegle, 
@@ -27,12 +29,12 @@ impl<'env> Contexte<'env> {
 			None => self.position = self.regles.len() 
 		}; 
 	} 
-	pub fn repositionner( &mut self, nom: &String ) -> Result<(),&'static str> { 
+	pub fn repositionner( &mut self, nom: &String ) -> Result<(),Erreur> { 
 		match self.regles.iter().position(
 			|env_regle| &env_regle.parent.nom == nom 
 		) { 
 			Some( p ) => self.position = p, 
-			None => return Err( "Appel d'une règle inconnue lors d'un repositionnement" ) 
+			None => return Err( Erreur::creer( "Appel d'une règle inconnue lors d'un repositionnement" ) ) 
 		} 
 		Ok( () )
 	} 
@@ -49,7 +51,7 @@ impl<'env> Contexte<'env> {
 	} 
 } 
 
-pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte,&'static str> { 
+pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte,Erreur> { 
 	let mut clauses = environnement.conditions.values().map( 
 		|condition| { 
 			condition.iter().filter_map( 
@@ -94,7 +96,9 @@ pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte
 						} 
 					) { 
 						Some( index ) => contexteregle_clauses.push( index ), 
-						_ => return Err( "Liaison invalide au sein des clauses via le contexte (logique)" ) 
+						_ => return Err( 
+							Erreur::creer( "Liaison invalide au sein des clauses via le contexte (logique)" ) 
+						) 
 					} 
 					Types::Appelable( _, _, _ ) => match contexte.clauses.iter().position( 
 						|item_clause| { 
@@ -102,7 +106,9 @@ pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte
 						} 
 					) { 
 						Some( index ) => contexteregle_clauses.push( index ), 
-						_ => return Err( "Liaison invalide au sein des clauses via le contexte (appelable)" ) 
+						_ => return Err( 
+							Erreur::creer( "Liaison invalide au sein des clauses via le contexte (appelable)" ) 
+						) 
 					} 
 					Types::Conditionnel( nom ) => match environnement.conditions.get( nom ) { 
 						Some( conditionnel_clauses ) => { 
@@ -111,10 +117,16 @@ pub fn construire<'env>( environnement: &'env Environnement ) -> Result<Contexte
 							positions.push( ancien ); 
 							actuel = conditionnel_clauses.iter(); 
 							if positions.len() > 15 { 
-								return Err( "Profondeur de récursion maximale autorisée des clauses conditionnelles atteinte" ) 
+								return Err( 
+									Erreur::creer( 
+										"Profondeur de récursion maximale autorisée des clauses conditionnelles atteinte" 
+									) 
+								) 
 							} 
 						} 
-						None => return Err( "Demande de condition inconnue" ) 
+						None => return Err( 
+							Erreur::creer( "Demande de condition inconnue" ) 
+						) 
 					} 
 					_ => () 
 				} 

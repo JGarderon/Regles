@@ -1,13 +1,14 @@
 
 use crate::Contexte; 
 
-use crate::contexte_resolution;
+use crate::contexte_resolution; 
 use crate::grammaire::constructeur::Environnement; 
 
 use crate::communs::Types; 
 use crate::communs::Dialogue; 
 
-use crate::communs::ActionResolution;
+use crate::communs::ActionResolution; 
+use crate::communs::Erreur; 
 
 fn resoudre( contexte: &mut Contexte, dialogue: &mut Dialogue ) -> ActionResolution { 
 	if contexte.position >= contexte.regles.len() { 
@@ -26,7 +27,7 @@ fn resoudre( contexte: &mut Contexte, dialogue: &mut Dialogue ) -> ActionResolut
 	return ActionResolution::Continuer; 
 } 
 
-fn determiner( contexte: &Contexte ) -> Result<bool, &'static str> { 
+fn determiner( contexte: &Contexte ) -> Result<bool, Erreur> { 
 	// à consolider : rendre plus efficace et plus sûr 
 	let mut actions: Vec<Vec<bool>> = vec!(); 
 	let mut etats: Vec<bool> = vec!(); 
@@ -54,7 +55,7 @@ fn determiner( contexte: &Contexte ) -> Result<bool, &'static str> {
 	Ok( etats.pop().unwrap() ) 
 } 
 
-fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> Result<(), &'static str> { 
+fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> Result<(), Erreur> { 
 	let mut avancement = true; 
 	let fin = if etat == true { 
 		// eprintln!( "position : {:?}", contexte.position ); 
@@ -71,7 +72,11 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 					contexte.repositionner( &nom_regle )?; 
 					avancement = false; 
 				}, 
-				_ => return Err( "Type invalide lors de l'application de la règle (partie 'Alors')" ) 
+				item @ _ => return Err( 
+					Erreur::creer_chaine( 
+						format!( "Type invalide '{:?}' lors de l'application de la règle (partie 'Alors')", item ) 
+					) 
+				) 
 			} 
 		} 
 		if i > 0 { 
@@ -93,7 +98,11 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 					contexte.repositionner( &nom_regle )?; 
 					avancement = false; 
 				}, 
-				_ => return Err( "Type invalide lors de l'application de la règle (partie 'Sinon')" ) 
+				item @ _ => return Err( 
+					Erreur::creer_chaine( 
+						format!( "Type invalide '{:?}' lors de l'application de la règle (partie 'Sinon')", item ) 
+					) 
+				) 
 			} 
 		} 
 		if i > 0 { 
@@ -114,7 +123,11 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 					contexte.repositionner( &nom_regle )?; 
 					avancement = false; 
 				}, 
-				_ => return Err( "Type invalide lors de l'application de la règle (partie 'Finalement')" ) 
+				item @ _ => return Err( 
+					Erreur::creer_chaine( 
+						format!( "Type invalide '{:?}' lors de l'application de la règle (partie 'Finalement')", item ) 
+					) 
+				) 
 			} 
 		} 
 		true 
@@ -130,7 +143,7 @@ fn appliquer( contexte: &mut Contexte, dialogue: &mut Dialogue, etat: bool ) -> 
 	Ok( () )
 }
 
-pub fn executer( environnement: &Environnement ) -> Result<(), &'static str> { 
+pub fn executer( environnement: &Environnement ) -> Result<(), Erreur> { 
 	let mut contexte = contexte_resolution( &environnement)?; 
 	let mut dialogue: Dialogue = Dialogue::creer(); 
 	// println!("contexte = {:#?}", contexte);
@@ -150,10 +163,12 @@ pub fn executer( environnement: &Environnement ) -> Result<(), &'static str> {
 					)?; 
 				}, 
 				ActionResolution::Arreter => break, 
-				ActionResolution::Erreur( erreur ) => return Err( erreur ) 
+				ActionResolution::Erreur( erreur ) => return Err( 
+					erreur.empiler( "Appelable 'exécuter'" ) 
+				) 
 			} 
 		} 
-	}
+	} 
 	Ok( () ) 
 } 
 

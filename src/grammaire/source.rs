@@ -1,7 +1,8 @@
 
 use std::fs::File; 
 use std::io::Read; 
-use std::io::Error; 
+
+use crate::grammaire::Erreur;
 
 #[derive(Debug)] 
 pub struct Source {
@@ -10,10 +11,14 @@ pub struct Source {
 } 
 
 impl Source {
-	pub fn creer( chemin: String ) -> Result<Self, Error> { 
+	pub fn creer( chemin: String ) -> Result<Self, Erreur> { 
 		let mut curseur = match File::open( &chemin[..] ) {
 			Ok( c ) => c, 
-			Err( erreur ) => return Err( erreur )  
+			Err( erreur ) => return Err( 
+				Erreur::creer_chaine( 
+					format!( "La source demandée '{}' n'est pas disponible", chemin ) 
+				) 
+			) 
 		}; 
 		let mut buffer = String::new(); 
 		match curseur.read_to_string( &mut buffer ) {
@@ -21,7 +26,11 @@ impl Source {
 				"Le fichier des règles '{}' semble vide", 
 				chemin 
 			), 
-			Err( erreur ) => return Err( erreur ), 
+			Err( erreur ) => return Err( 
+				Erreur::creer_chaine( 
+					format!( "La source demandée '{}' a rencontré des erreurs lors de la lecture", chemin ) 
+				) 
+			), 
 			_ => () 
 		} 
 		Ok( Source {
