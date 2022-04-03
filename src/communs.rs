@@ -16,6 +16,15 @@ impl Erreur {
 		self.0.push( format!( "{}", m_suivant ) ); 
 		self 
 	} 
+	pub fn afficher( &self, m_suivant: &str ) { 
+		eprintln!( "# ERREUR '{}' - dépilement :", m_suivant ); 
+		self.0.iter().all(
+			|m| { 
+				eprintln!( "# ... {}", m );
+				false 
+			}
+		); 
+	} 
 }
 
 #[derive(Debug,PartialEq,PartialOrd,Clone)] 
@@ -100,13 +109,14 @@ impl Dialogue {
 					let r = match self.tampon.trim_end() { 
 						"v" => Ok( true ), 
 						"f" => Ok( false ), 
-						_ => { 
-							println!( 
-								"# DUMP, retour de soumission d'un appelable : {:?}", 
-								self.tampon.trim_end() 
-							); 
+						_ => {  
 							Err( 
-								Erreur::creer( "Le processus a récupéré une ligne indéterminée ; le DUMP a été mis en console de celui-ci" ) 
+								Erreur::creer_chaine( 
+									format!( 
+										"Le processus a récupéré une ligne indéterminée : '{}'", 
+										self.tampon.trim_end() 
+									) 
+								) 
 							)  
 						} 
 					}; 
