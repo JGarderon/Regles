@@ -7,10 +7,11 @@ use crate::communs::Erreur;
 use crate::Types;
 
 static mut CONFIGURATION: Option<Configuration> = None; 
-
+static mut CONF_ENV_OBLIGATOIRES: Option<HashMap<String, String>> = None; 
+static mut CONF_VARS_OBLIGATOIRES: Option<HashMap<String, String>> = None; 
 
 #[derive(Debug)] 
-pub struct Configuration( HashMap<&'static str,Types> ); 
+pub struct Configuration( HashMap<String,Types> ); 
 
 impl Configuration {
 	pub fn creer() -> Result<(), Erreur> { 
@@ -19,33 +20,75 @@ impl Configuration {
 				return Err( 
 					Erreur::creer( 
 						"La configuration a déjà été faite : impossible de relancer" 
-					)
+					) 
 				); 
 			} 
-			let mut conf = HashMap::new(); 
-			for item in vec!( 
-				vec!( "RESOLUTION_TYPE", "resolution_type" ), 
-				vec!( "REGLES_SOURCE", "regles_source" ) 
-			).iter() { 
-				match env::var( item[0] ) { 
-				    Ok( valeur ) => { 
-				    	conf.insert( 
-					    	item[1], 
-					    	Types::Texte( valeur.to_string() ) 
-					    ); 
+			let env_obligatoires = vec!( 
+				( "RESOLUTION_TYPE".to_string(), "resolution_type".to_string() ), 
+				( "REGLES_SOURCE".to_string(), "regles_source".to_string() ),  
+			).into_iter().collect::<HashMap<_, _>>(); 
+			let args_obligatoires = vec!( 
+				( "resolution".to_string(), "resolution_type".to_string() ), 
+				( "regles".to_string(), "regles_source".to_string() ),  
+			).into_iter().collect::<HashMap<_, _>>(); 
+			let mut conf: HashMap<String,Types> = HashMap::new(); 
+			for item in env_obligatoires.iter() { 
+				match env::var( item.0 ) { 
+					Ok( valeur ) => { 
+						conf.insert( 
+							item.1.to_string(), 
+							Types::Texte( valeur ) 
+						); 
 					} 
-				    Err( _ ) => () 
+					Err( _ ) => () 
 				}; 
 			} 
-			// for argument in env::args() { 
-			//     argument.starts_with("--"); 
-			// } 
+			let mut cle_precedent: Option<String> = None; 
+			let mut valeur_suivant = false; 
+			for argument in env::args().skip( 1 ) { 
+				if valeur_suivant { 
+					conf.insert( 
+						cle_precedent.unwrap(), // à voir pour sécuriser davantage à l'avenir 
+						Types::Texte( 
+							argument 
+						) 
+					); 
+					cle_precedent = None; 
+					valeur_suivant = false; 
+				} else { 
+					if argument.starts_with("--") { 
+						valeur_suivant = true; 
+						let cle = argument.strip_prefix("--").unwrap().to_string(); 
+						match args_obligatoires.get( &cle ) { 
+							Some( valeur ) => cle_precedent = Some( valeur.clone() ), 
+							None => return Err( 
+								Erreur::creer_chaine( 
+									format!( 
+										"La valeur '{}' n'a pas de sens en ligne de commande à cette position", 
+										argument 
+									) 
+								) 
+							)
+						} 
+					} else { 
+						return Err( 
+							Erreur::creer_chaine( 
+								format!( 
+									"La valeur '{}' n'a pas de sens en ligne de commande à cette position", 
+									argument 
+								) 
+							) 
+						); 
+					} 
+				} 
+			} 
 			CONFIGURATION = Some( 
 				Configuration { 
 					0: conf 
 				}
 			); 
-			println!("{:?}", CONFIGURATION); 
+			CONF_ENV_OBLIGATOIRES = Some( env_obligatoires ); 
+			CONF_VARS_OBLIGATOIRES = Some( args_obligatoires ); 
 		} 
 		Ok( () ) 
 	}  
