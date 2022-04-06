@@ -142,6 +142,10 @@
 //!
 #![allow(warnings, unused)] 
 
+/// Le module [`configuration`] (nouveauté en v.1.0.2), gère l'ensemble des éléments structurant le lancement de l'applicatif (lignes de commande et variables d'environnement) 
+mod configuration; 
+use crate::configuration::Configuration; 
+
 /// Le module [`resolution`] s'occupe de gérer les contextes, c'est-à-dire l'objet en mémoire qui porte l'état des clauses et des conditions et règles compilées, en gardant le lien avec l'environnement de règles initial. 
 mod resolution; 
 use crate::resolution::contexte::Contexte;
@@ -156,16 +160,28 @@ use crate::communs::Types;
 mod grammaire; 
 use crate::grammaire::constructeur::construire as environnement_construire; 
 
-/// La fonction `main` n'a pour seule tâche que d'appeler la fonction de résolution globale [`resolution::executer`] et de gérer l'affichage sur le `stderr` d'une erreur rencontrée par le programme. 
-///
+/// La fonction `main` a trois principales tâches, permettant de piloter l'ensemble du processus durant sa durée de vie. 
 /// 
-///
+/// Voici le détail : 
+///   - lancer la configuration générale de l'applicatif (`statict mut` global) ; 
+///   - appeler la fonction de résolution globale [`resolution::executer`] ; 
+///   - gérer l'affichage sur le `stderr` d'une erreur rencontrée par le programme. 
+/// 
+/// Format de sortie de **_processus_** : 
+///   - `0` : tout s'est bien déroulé ; 
+///   - `1` : la configuration a rencontrée une erreur ; 
+///   - `2` : la résolution a rencontré une erreur. 
+/// 
 fn main() { 
+	if let Err( erreur ) = Configuration::creer() { 
+		erreur.afficher( "erreur fatale durant la configuration" ); 
+		std::process::exit( 1 )
+	} 
 	std::process::exit( match resolution_executer() { 
 		Ok( _ ) => 0, 
 		Err( erreur ) => { 
-			erreur.afficher( "erreur fatale" ); 
-			1 
+			erreur.afficher( "erreur fatale durant la résolution" ); 
+			2 
 		} 
 	} ); 
 } 
