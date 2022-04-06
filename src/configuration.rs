@@ -27,7 +27,7 @@ impl Configuration {
 				( "RESOLUTION_TYPE".to_string(), "resolution_type".to_string() ), 
 				( "REGLES_SOURCE".to_string(), "regles_source".to_string() ),  
 			).into_iter().collect::<HashMap<_, _>>(); 
-			let args_obligatoires = vec!( 
+			let args_optionnels = vec!( 
 				( "resolution".to_string(), "resolution_type".to_string() ), 
 				( "regles".to_string(), "regles_source".to_string() ),  
 			).into_iter().collect::<HashMap<_, _>>(); 
@@ -59,7 +59,7 @@ impl Configuration {
 					if argument.starts_with("--") { 
 						valeur_suivant = true; 
 						let cle = argument.strip_prefix("--").unwrap().to_string(); 
-						match args_obligatoires.get( &cle ) { 
+						match args_optionnels.get( &cle ) { 
 							Some( valeur ) => cle_precedent = Some( valeur.clone() ), 
 							None => return Err( 
 								Erreur::creer_chaine( 
@@ -88,10 +88,28 @@ impl Configuration {
 				}
 			); 
 			CONF_ENV_OBLIGATOIRES = Some( env_obligatoires ); 
-			CONF_VARS_OBLIGATOIRES = Some( args_obligatoires ); 
+			CONF_VARS_OBLIGATOIRES = Some( args_optionnels ); 
 		} 
 		Ok( () ) 
 	}  
+} 
+
+pub fn conf_definir( cle: String, valeur: Types ) -> Result<(), Erreur>  { 
+	unsafe { 
+		if let Some( conf ) = &mut CONFIGURATION { 
+			conf.0.insert( 
+				cle, 
+				valeur 
+			); 
+			Ok( () ) 
+		} else { 
+			Err( 
+				Erreur::creer( 
+					"La configuration n'a pas été faite : possible de définir une valeur" 
+				)
+			) 
+		} 
+	} 
 } 
 
 pub fn conf_obtenir( cle: &str ) -> Result<Option<Types>, Erreur>  { 
@@ -106,12 +124,12 @@ pub fn conf_obtenir( cle: &str ) -> Result<Option<Types>, Erreur>  {
 		} else { 
 			return Err( 
 				Erreur::creer( 
-					"La configuration n'a pas été faite : possible de relancer" 
+					"La configuration n'a pas été faite : possible d'obtenir une valeur" 
 				)
 			); 
 		} 
 	} 
-}
+} 
 
 
 
